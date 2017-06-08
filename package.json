@@ -1,0 +1,35 @@
+{
+  "name": "klog",
+  "version": "0.0.1",
+  "description": "fast remote logging service",
+  "main": "index.js",
+  "license": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andrasq/klog"
+  },
+  "author": {
+    "name": "Andras",
+    "url": "http://github.com/andrasq"
+  },
+  "engines": {
+    "node": ">=0.10"
+  },
+  "scripts": {
+    "test": "qnit test",
+    "coverage": "nyc --reporter lcov --reporter text npm test",
+    "clean": "rm -rf .nyc_output/ coverage/"
+  },
+  "keywords": [ "log", "remote", "logging", "service" ],
+  "dependencies": {
+    "aflow": "0.10.1",
+    "qgetopt": "1.0.1",
+    "mongoid-js": "1.1.0",
+    "qlogger": "1.3.13",
+    "qrpc": "1.1.6",
+    "restiq": "0.7.0"
+  },
+  "devDependencies": {
+    "qnit": "0.16.2"
+  }
+}
