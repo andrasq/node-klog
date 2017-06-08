@@ -25,11 +25,13 @@
     "aflow": "0.10.1",
     "qgetopt": "1.0.1",
     "mongoid-js": "1.1.0",
+    "qfputs": "1.7.0",
     "qlogger": "1.3.13",
     "qrpc": "1.1.6",
     "restiq": "0.7.0"
   },
   "devDependencies": {
+    "qhttp": "0.6.0",
     "qnit": "0.16.2"
   }
 }
