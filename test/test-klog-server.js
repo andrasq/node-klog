@@ -1,17 +1,23 @@
 'use strict';
 
-var createServer = require('../lib/klog-server.js');
+var KlogServer = require('../lib/klog-server.js');
 var qhttp = require('qhttp');
 
 module.exports = {
     'klog-server': {
-        'should export a function': function(t) {
-            t.equal(typeof createServer, 'function');
+        'should export a constructor': function(t) {
+            var server = new KlogServer();
+            t.ok(server instanceof KlogServer);
+            t.done();
+        },
+
+        'should expose a builder function': function(t) {
+            t.equal(typeof KlogServer.createServer, 'function');
             t.done();
         },
 
         'should create and close log server': function(t) {
-            var klog = createServer(function(){
+            var klog = KlogServer.createServer(function(){
                 t.ok(klog.httpPort > 0);
                 t.ok(klog.qrpcPort > 0);
                 t.ok(klog.httpServer);
@@ -25,7 +31,7 @@ module.exports = {
         },
 
         'should return server also in callback': function(t) {
-            var klog = createServer(function(err, klog2) {
+            var klog = KlogServer.createServer(function(err, klog2) {
                 t.equal(klog, klog2);
                 klog.close(function() {
                     t.done();
@@ -34,7 +40,7 @@ module.exports = {
         },
 
         'should close more than once': function(t) {
-            var klog = createServer(function() {
+            var klog = KlogServer.createServer(function() {
                 klog.close(function() {
                     klog.close(function() {
                         klog.close(function() {
@@ -52,13 +58,13 @@ module.exports = {
             var config = {
                 logs: {
                     testlog: {
-                        write: function(str, cb) { testlog.push(str); cb() },
-                        fflush: function(cb) { cb() },
+                        write: function(str, cb) { testlog.push(str); if (cb) cb() },
+                        fflush: function(cb) { testlog.push('__sync__'); cb() },
                     }
                 },
             };
             this.testlog = testlog;
-            this.server = createServer(config, done);
+            this.server = KlogServer.createServer(config, done);
         },
 
         afterEach: function(done) {
@@ -68,7 +74,9 @@ module.exports = {
         'should log lines': function(t) {
             var self = this;
             qhttp.post("http://localhost:4244/testlog/write", "logline1\n", function(err, res, body) {
+                t.equal(res.statusCode, 200);
                 qhttp.post("http://localhost:4244/testlog/write", "logline2\nlogline3\n", function(err, res, body) {
+                    t.equal(res.statusCode, 200);
                     t.equal(self.testlog[0], 'logline1\n');
                     t.equal(self.testlog[1], 'logline2\nlogline3\n');
                     t.done();
@@ -84,11 +92,28 @@ module.exports = {
             })
         },
 
+        'should skip empty lines': function(t) {
+            var self = this;
+            qhttp.post("http://localhost:4244/nosuchlog/write", "", function(err, res, body) {
+                t.equal(res.statusCode, 400);
+                t.deepEqual(self.testlog, []);
+                t.done();
+            })
+        },
+
         'should return error if log not found': function(t) {
             qhttp.post("http://localhost:4244/nosuchlog/write", "logline", function(err, res, body) {
-console.log("AR: notfound got", res.statusCode, body+"");
                 t.equal(res.statusCode, 400);
                 t.contains(body + '', "");
+                t.done();
+            })
+        },
+
+        'should sync log': function(t) {
+            var self = this;
+            qhttp.post("http://localhost:4244/testlog/sync", "logline", function(err, res, body) {
+                t.equal(res.statusCode, 200);
+                t.deepEqual(self.testlog, [ '__sync__' ]);
                 t.done();
             })
         },

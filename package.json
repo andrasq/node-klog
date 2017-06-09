@@ -16,7 +16,7 @@
     "node": ">=0.10"
   },
   "scripts": {
-    "test": "qnit test",
+    "test": "qnit test/test-*",
     "coverage": "nyc --reporter lcov --reporter text npm test",
     "clean": "rm -rf .nyc_output/ coverage/"
   },
