@@ -50,16 +50,34 @@ module.exports = {
                 })
             })
         },
+
+        'should create express server': function(t) {
+            var klog = KlogServer.createServer({ expressPort: 4246 }, function(err, klog2) {
+                t.ok(klog.expressServer);
+                klog.close(function() {
+                    t.done();
+                })
+            })
+        },
     },
 
     'httpServer': {
         beforeEach: function(done) {
             var testlog = [];
             var config = {
+                httpPort: 4244,
+                qrpcPort: 4245,
+                expressPort: 4246,
                 logs: {
                     testlog: {
-                        write: function(str, cb) { testlog.push(str); if (cb) cb() },
-                        fflush: function(cb) { testlog.push('__sync__'); cb() },
+                        write: function(str, cb) {
+                            testlog.push(str);
+                            if (cb) cb()
+                        },
+                        fflush: function(cb) {
+                            testlog.push('__sync__');
+                            cb()
+                        },
                     }
                 },
             };
@@ -114,6 +132,42 @@ module.exports = {
             qhttp.post("http://localhost:4244/testlog/sync", "logline", function(err, res, body) {
                 t.equal(res.statusCode, 200);
                 t.deepEqual(self.testlog, [ '__sync__' ]);
+                t.done();
+            })
+        },
+
+        'http server should call _doHttpLogWrite': function(t) {
+            var spy = t.spyOnce(this.server, '_doHttpLogWrite');
+            qhttp.post("http://localhost:4244/testlog/write", "logline\n", function(err, res, body) {
+                t.equal(spy.callCount, 1);
+                t.done();
+            })
+        },
+
+        'http server should call _doHttpLogSync': function(t) {
+            var self = this;
+            var spy = t.spyOnce(this.server, '_doHttpLogSync');
+            qhttp.post("http://localhost:4244/testlog/sync", "logline", function(err, res, body) {
+                t.equal(spy.callCount, 1);
+                t.equal(self.testlog[0], '__sync__');
+                t.done();
+            })
+        },
+
+        'express server should call _doHttpLogWrite': function(t) {
+            var spy = t.spyOnce(this.server, '_doHttpLogWrite');
+            qhttp.post("http://localhost:4246/testlog/write", "logline\n", function(err, res, body) {
+                t.equal(spy.callCount, 1);
+                t.done();
+            })
+        },
+
+        'express server should call _doHttpLogSync': function(t) {
+            var self = this;
+            var spy = t.spyOnce(this.server, '_doHttpLogSync');
+            qhttp.post("http://localhost:4246/testlog/sync", "logline", function(err, res, body) {
+                t.equal(spy.callCount, 1);
+                t.equal(self.testlog[0], '__sync__');
                 t.done();
             })
         },
