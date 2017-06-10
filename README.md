@@ -32,7 +32,11 @@ Config:
 
 Append to the named log.
 
-### klog.createClient( options )
+#### POST /:logname/sync
+
+Flush the pending writes to backing store.
+
+### klog.createClient( logname, options, callback )
 
 Create a `qlogger` compatible log writer.  Qlogger can filter, convert,
 format and annotate the log lines, and klog will transport the logged lines
@@ -48,17 +52,13 @@ Options:
 Append a line to the log.  Writing is asynchronous; use `fflush` to ensure that the
 line has been recorded to the journal or `sync` that is has been recorded on the server.
 
+#### client.fflush( cb )
+
+Wait for all the logged lines to be persisted on the remote log server.
+
 #### client.close( )
 
 Disconnect from the klog server.  Note that this does not `fflush`.
-
-#### client.fflush( cb )
-
-Wait for all the logged lines to be persisted to the local journal.
-
-#### client.sync( cb )
-
-Wait for all the written lines to be persisted on the remo
 
 
 Performance
@@ -81,3 +81,11 @@ Related Work
 - [request](https://npmjs.com/package/request) - featureful but slow http request library
 - [express](https://npmjs.com/package/express) - featureful REST framework
 - [restiq](https://npmjs.com/package/restiq) - light-weight REST framework
+
+
+TODO
+----------------
+
+- rely on just write and fflush, deprecase sync (local journal is implementation detail; fflush to remote)
+- update readme for the above
+
