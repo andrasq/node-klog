@@ -71,3 +71,13 @@ Restiq
 Qrpc
 
 Bulk (curl)
+
+
+Related Work
+----------------
+
+- [qrpc](https://npmjs.com/package/qrpc) - very fast rpc
+- [qhttp](https://npmjs.com/package/qhttp) - fast convenience wrapper around `http`
+- [request](https://npmjs.com/package/request) - featureful but slow http request library
+- [express](https://npmjs.com/package/express) - featureful REST framework
+- [restiq](https://npmjs.com/package/restiq) - light-weight REST framework
