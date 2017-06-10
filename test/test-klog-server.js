@@ -2,6 +2,7 @@
 
 var KlogServer = require('../lib/klog-server.js');
 var qhttp = require('qhttp');
+var qrpc = require('qrpc');
 
 module.exports = {
     'klog-server': {
@@ -61,7 +62,7 @@ module.exports = {
         },
     },
 
-    'httpServer': {
+    'server': {
         beforeEach: function(done) {
             var testlog = [];
             var config = {
@@ -89,87 +90,107 @@ module.exports = {
             this.server.close(done);
         },
 
-        'should log lines': function(t) {
-            var self = this;
-            qhttp.post("http://localhost:4244/testlog/write", "logline1\n", function(err, res, body) {
-                t.equal(res.statusCode, 200);
-                qhttp.post("http://localhost:4244/testlog/write", "logline2\nlogline3\n", function(err, res, body) {
+        'httpServer': {
+
+            'should log lines': function(t) {
+                var self = this;
+                qhttp.post("http://localhost:4244/testlog/write", "logline1\n", function(err, res, body) {
                     t.equal(res.statusCode, 200);
-                    t.equal(self.testlog[0], 'logline1\n');
-                    t.equal(self.testlog[1], 'logline2\nlogline3\n');
+                    qhttp.post("http://localhost:4244/testlog/write", "logline2\nlogline3\n", function(err, res, body) {
+                        t.equal(res.statusCode, 200);
+                        t.equal(self.testlog[0], 'logline1\n');
+                        t.equal(self.testlog[1], 'logline2\nlogline3\n');
+                        t.done();
+                    })
+                })
+            },
+
+            'should newline terminate loglines': function(t) {
+                var self = this;
+                qhttp.post("http://localhost:4244/testlog/write", "logline", function(err, res, body) {
+                    t.equal(self.testlog[0], 'logline\n');
                     t.done();
                 })
-            })
+            },
+
+            'should skip empty lines': function(t) {
+                var self = this;
+                qhttp.post("http://localhost:4244/nosuchlog/write", "", function(err, res, body) {
+                    t.equal(res.statusCode, 400);
+                    t.deepEqual(self.testlog, []);
+                    t.done();
+                })
+            },
+
+            'should return error if log not found': function(t) {
+                qhttp.post("http://localhost:4244/nosuchlog/write", "logline", function(err, res, body) {
+                    t.equal(res.statusCode, 400);
+                    t.contains(body + '', "");
+                    t.done();
+                })
+            },
+
+            'should sync log': function(t) {
+                var self = this;
+                qhttp.post("http://localhost:4244/testlog/sync", "logline", function(err, res, body) {
+                    t.equal(res.statusCode, 200);
+                    t.deepEqual(self.testlog, [ '__sync__' ]);
+                    t.done();
+                })
+            },
+
+            'http server should call _doHttpLogWrite': function(t) {
+                var spy = t.spyOnce(this.server, '_doHttpLogWrite');
+                qhttp.post("http://localhost:4244/testlog/write", "logline\n", function(err, res, body) {
+                    t.equal(spy.callCount, 1);
+                    t.done();
+                })
+            },
+
+            'http server should call _doHttpLogSync': function(t) {
+                var self = this;
+                var spy = t.spyOnce(this.server, '_doHttpLogSync');
+                qhttp.post("http://localhost:4244/testlog/sync", "logline", function(err, res, body) {
+                    t.equal(spy.callCount, 1);
+                    t.equal(self.testlog[0], '__sync__');
+                    t.done();
+                })
+            },
+
+            'express server should call _doHttpLogWrite': function(t) {
+                var spy = t.spyOnce(this.server, '_doHttpLogWrite');
+                qhttp.post("http://localhost:4246/testlog/write", "logline\n", function(err, res, body) {
+                    t.equal(spy.callCount, 1);
+                    t.done();
+                })
+            },
+
+            'express server should call _doHttpLogSync': function(t) {
+                var self = this;
+                var spy = t.spyOnce(this.server, '_doHttpLogSync');
+                qhttp.post("http://localhost:4246/testlog/sync", "logline", function(err, res, body) {
+                    t.equal(spy.callCount, 1);
+                    t.equal(self.testlog[0], '__sync__');
+                    t.done();
+                })
+            },
         },
 
-        'should newline terminate loglines': function(t) {
-            var self = this;
-            qhttp.post("http://localhost:4244/testlog/write", "logline", function(err, res, body) {
-                t.equal(self.testlog[0], 'logline\n');
-                t.done();
-            })
+        'qrpcServer': {
+            'should log lines': function(t) {
+                var self = this;
+                var client = qrpc.connect(4245, 'localhost', function(socket) {
+                    client.call('logname', 'testlog');
+                    client.call('write', 'logline1\n');
+                    client.call('write', 'logline2\nlogline3\n');
+                    client.call('write', new Buffer('logline4\n'));
+                    client.call('sync', function() {
+                        t.deepEqual(self.testlog, ['logline1\n', 'logline2\nlogline3\n', new Buffer('logline4\n'), '__sync__']);
+                        t.done();
+                    })
+                })
+            },
         },
 
-        'should skip empty lines': function(t) {
-            var self = this;
-            qhttp.post("http://localhost:4244/nosuchlog/write", "", function(err, res, body) {
-                t.equal(res.statusCode, 400);
-                t.deepEqual(self.testlog, []);
-                t.done();
-            })
-        },
-
-        'should return error if log not found': function(t) {
-            qhttp.post("http://localhost:4244/nosuchlog/write", "logline", function(err, res, body) {
-                t.equal(res.statusCode, 400);
-                t.contains(body + '', "");
-                t.done();
-            })
-        },
-
-        'should sync log': function(t) {
-            var self = this;
-            qhttp.post("http://localhost:4244/testlog/sync", "logline", function(err, res, body) {
-                t.equal(res.statusCode, 200);
-                t.deepEqual(self.testlog, [ '__sync__' ]);
-                t.done();
-            })
-        },
-
-        'http server should call _doHttpLogWrite': function(t) {
-            var spy = t.spyOnce(this.server, '_doHttpLogWrite');
-            qhttp.post("http://localhost:4244/testlog/write", "logline\n", function(err, res, body) {
-                t.equal(spy.callCount, 1);
-                t.done();
-            })
-        },
-
-        'http server should call _doHttpLogSync': function(t) {
-            var self = this;
-            var spy = t.spyOnce(this.server, '_doHttpLogSync');
-            qhttp.post("http://localhost:4244/testlog/sync", "logline", function(err, res, body) {
-                t.equal(spy.callCount, 1);
-                t.equal(self.testlog[0], '__sync__');
-                t.done();
-            })
-        },
-
-        'express server should call _doHttpLogWrite': function(t) {
-            var spy = t.spyOnce(this.server, '_doHttpLogWrite');
-            qhttp.post("http://localhost:4246/testlog/write", "logline\n", function(err, res, body) {
-                t.equal(spy.callCount, 1);
-                t.done();
-            })
-        },
-
-        'express server should call _doHttpLogSync': function(t) {
-            var self = this;
-            var spy = t.spyOnce(this.server, '_doHttpLogSync');
-            qhttp.post("http://localhost:4246/testlog/sync", "logline", function(err, res, body) {
-                t.equal(spy.callCount, 1);
-                t.equal(self.testlog[0], '__sync__');
-                t.done();
-            })
-        },
     },
 }
