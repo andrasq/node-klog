@@ -37,6 +37,8 @@ if (cluster.isMaster) {
                 fflush: function(cb) { server.close(cb) },
             },
         },
+    }, function(err, svr) {
+        // server listening
     });
 }
 else {
@@ -51,11 +53,9 @@ else {
 
     qtimeit.bench.timeGoal = 2.0;
     qtimeit.bench.opsPerTest = 100;
-    qtimeit.bench({
-        'pause': function(done) {
-            setTimeout(done, 100);
-        },
-
+    qtimeit.bench.visualize = true;
+    //qtimeit.bench.showRunDetails = false;
+    setTimeout(function(){ qtimeit.bench({
 /**
         'qrpc.connect': function(done) {
             var client = qrpc.connect(4245, 'localhost', function(socket) {
@@ -75,50 +75,6 @@ else {
             // 12k/s
         },
 **/
-
-        'qrpc w qrpc 1': function(done) {
-            log_100_w_qrpc_qrpc(client, done);
-        },
-        'qrpc w qrpc 2': function(done) {
-            log_100_w_qrpc_qrpc(client, done);
-        },
-        'qrpc w qrpc 3': function(done) {
-            log_100_w_qrpc_qrpc(client, done);
-            // 31 k/s
-        },
-
-        'qrpc w qrpc 1k 1': function(done) {
-            log_1000_w_qrpc_qrpc(client, done);
-        },
-        'qrpc w qrpc 1k 2': function(done) {
-            log_1000_w_qrpc_qrpc(client, done);
-        },
-        'qrpc w qrpc 1k 3': function(done) {
-            log_1000_w_qrpc_qrpc(client, done);
-            // 134 k/s
-        },
-
-        'qrpc w klogClient 1': function(done) {
-            log_100_w_qrpc_klogClient(klogClient, done);
-        },
-        'qrpc w klogClient 2': function(done) {
-            log_100_w_qrpc_klogClient(klogClient, done);
-        },
-        'qrpc w klogClient 3': function(done) {
-            log_100_w_qrpc_klogClient(klogClient, done);
-            // 31 k/s
-        },
-
-        'qrpc w klogClient 100k stream 1': function(done) {
-            log_100k_w_qrpc_klogClient(klogClient, done);
-        },
-        'qrpc w klogClient 100k stream 2': function(done) {
-            log_100k_w_qrpc_klogClient(klogClient, done);
-        },
-        'qrpc w klogClient 100k stream 3': function(done) {
-            log_100k_w_qrpc_klogClient(klogClient, done);
-            // 250 k/s 100k, 190 k/s 10k, 140 k/s 1k lines per sync
-        },
 
         'express w request 1': function(done) {
             log_100_w_express_request(done);
@@ -170,6 +126,50 @@ else {
         'restiq w request 3': function(done) {
             log_100_w_restiq_request(done);
             // 7.8 k/s
+        },
+
+        'qrpc w qrpc 1': function(done) {
+            log_100_w_qrpc_qrpc(client, done);
+        },
+        'qrpc w qrpc 2': function(done) {
+            log_100_w_qrpc_qrpc(client, done);
+        },
+        'qrpc w qrpc 3': function(done) {
+            log_100_w_qrpc_qrpc(client, done);
+            // 31 k/s
+        },
+
+        'qrpc w qrpc 1k 1': function(done) {
+            log_1000_w_qrpc_qrpc(client, done);
+        },
+        'qrpc w qrpc 1k 2': function(done) {
+            log_1000_w_qrpc_qrpc(client, done);
+        },
+        'qrpc w qrpc 1k 3': function(done) {
+            log_1000_w_qrpc_qrpc(client, done);
+            // 134 k/s
+        },
+
+        'qrpc w klogClient 1': function(done) {
+            log_100_w_qrpc_klogClient(klogClient, done);
+        },
+        'qrpc w klogClient 2': function(done) {
+            log_100_w_qrpc_klogClient(klogClient, done);
+        },
+        'qrpc w klogClient 3': function(done) {
+            log_100_w_qrpc_klogClient(klogClient, done);
+            // 31 k/s
+        },
+
+        'qrpc w klogClient 100k stream 1': function(done) {
+            log_100k_w_qrpc_klogClient(klogClient, done);
+        },
+        'qrpc w klogClient 100k stream 2': function(done) {
+            log_100k_w_qrpc_klogClient(klogClient, done);
+        },
+        'qrpc w klogClient 100k stream 3': function(done) {
+            log_100k_w_qrpc_klogClient(klogClient, done);
+            // 250 k/s 100k, 190 k/s 10k, 140 k/s 1k lines per sync
         },
 
     }, function(err) {
@@ -248,10 +248,11 @@ else {
     })
 
     })
+    }, 250);
 }
 
 function log_100_w_express_request( done ) {
-    var nloops = 1000;
+    var nloops = 100;
     var ndone = 0;
 
     for (var i=0; i<nloops; i++) {
