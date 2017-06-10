@@ -54,7 +54,7 @@ else {
     qtimeit.bench.timeGoal = 2.0;
     qtimeit.bench.opsPerTest = 100;
     qtimeit.bench.visualize = true;
-    //qtimeit.bench.showRunDetails = false;
+    qtimeit.bench.showRunDetails = false;
     setTimeout(function(){ qtimeit.bench({
 /**
         'qrpc.connect': function(done) {
@@ -139,13 +139,13 @@ else {
             // 31 k/s
         },
 
-        'qrpc w qrpc 1k 1': function(done) {
+        'qrpc w qrpc 1k x10 1': function(done) {
             log_1000_w_qrpc_qrpc(client, done);
         },
-        'qrpc w qrpc 1k 2': function(done) {
+        'qrpc w qrpc 1k x10 2': function(done) {
             log_1000_w_qrpc_qrpc(client, done);
         },
-        'qrpc w qrpc 1k 3': function(done) {
+        'qrpc w qrpc 1k x10 3': function(done) {
             log_1000_w_qrpc_qrpc(client, done);
             // 134 k/s
         },
@@ -161,13 +161,13 @@ else {
             // 31 k/s
         },
 
-        'qrpc w klogClient 100k stream 1': function(done) {
+        'qrpc w klogClient 100k x100 stream 1': function(done) {
             log_100k_w_qrpc_klogClient(klogClient, done);
         },
-        'qrpc w klogClient 100k stream 2': function(done) {
+        'qrpc w klogClient 100k x100 stream 2': function(done) {
             log_100k_w_qrpc_klogClient(klogClient, done);
         },
-        'qrpc w klogClient 100k stream 3': function(done) {
+        'qrpc w klogClient 100k x100 stream 3': function(done) {
             log_100k_w_qrpc_klogClient(klogClient, done);
             // 250 k/s 100k, 190 k/s 10k, 140 k/s 1k lines per sync
         },

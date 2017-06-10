@@ -67,32 +67,32 @@ Performance
 Performance with node-v6.9.1:
 
     qtimeit=0.19.0 node=6.9.1 v8=5.1.281.84 platform=linux kernel=3.16.0-4-amd64 up_threshold=11
-    arch=ia32 mhz=4419 cpuCount=8 cpu="Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz"
-    name                                speed         (stats)                                                      rate
-    express w request 1                 6,155 ops/sec (40 runs of 2 calls in 1.300 out of 2.019 sec, +/- 0.32%)    1000 >>>>>
-    express w request 2                 7,038 ops/sec (47 runs of 2 calls in 1.335 out of 2.040 sec, +/- 0.27%)    1143 >>>>>>
-    express w request 3                 6,857 ops/sec (46 runs of 2 calls in 1.342 out of 2.029 sec, +/- 0.25%)    1114 >>>>>>
-    express w qhttp 1                  13,717 ops/sec (92 runs of 2 calls in 1.341 out of 2.020 sec, +/- 0.30%)    2228 >>>>>>>>>>>
-    express w qhttp 2                  13,923 ops/sec (93 runs of 2 calls in 1.336 out of 2.008 sec, +/- 0.27%)    2262 >>>>>>>>>>>
-    express w qhttp 3                  14,386 ops/sec (95 runs of 2 calls in 1.321 out of 2.004 sec, +/- 0.30%)    2337 >>>>>>>>>>>>
-    restiq w qhttp 1                   14,955 ops/sec (99 runs of 2 calls in 1.324 out of 2.007 sec, +/- 0.35%)    2429 >>>>>>>>>>>>
-    restiq w qhttp 2                   15,591 ops/sec (103 runs of 2 calls in 1.321 out of 2.001 sec, +/- 0.33%)   2533 >>>>>>>>>>>>>
-    restiq w qhttp 3                   15,178 ops/sec (102 runs of 2 calls in 1.344 out of 2.002 sec, +/- 0.36%)   2466 >>>>>>>>>>>>
-    restiq w request 1                  7,643 ops/sec (50 runs of 2 calls in 1.308 out of 2.007 sec, +/- 0.21%)    1242 >>>>>>
-    restiq w request 2                  7,601 ops/sec (51 runs of 2 calls in 1.342 out of 2.009 sec, +/- 0.18%)    1235 >>>>>>
-    restiq w request 3                  8,154 ops/sec (51 runs of 2 calls in 1.251 out of 2.004 sec, +/- 0.15%)    1325 >>>>>>>
-    qrpc w qrpc 1                      30,217 ops/sec (202 runs of 2 calls in 1.337 out of 2.010 sec, +/- 0.46%)   4909 >>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w qrpc 2                      31,121 ops/sec (208 runs of 2 calls in 1.337 out of 2.007 sec, +/- 0.44%)   5055 >>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w qrpc 3                      30,472 ops/sec (201 runs of 2 calls in 1.319 out of 2.001 sec, +/- 0.39%)   4950 >>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w qrpc 1k 1                   11,029 ops/sec (74 runs of 2 calls in 1.342 out of 2.009 sec, +/- 0.28%)    1792 >>>>>>>>>
-    qrpc w qrpc 1k 2                   12,080 ops/sec (81 runs of 2 calls in 1.341 out of 2.003 sec, +/- 0.25%)    1962 >>>>>>>>>>
-    qrpc w qrpc 1k 3                    9,783 ops/sec (66 runs of 2 calls in 1.349 out of 2.026 sec, +/- 0.23%)    1589 >>>>>>>>
-    qrpc w klogClient 1                29,233 ops/sec (195 runs of 2 calls in 1.334 out of 2.006 sec, +/- 0.46%)   4749 >>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w klogClient 2                29,645 ops/sec (197 runs of 2 calls in 1.329 out of 2.001 sec, +/- 0.46%)   4816 >>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w klogClient 3                30,900 ops/sec (208 runs of 2 calls in 1.346 out of 2.008 sec, +/- 0.41%)   5020 >>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w klogClient 100k stream 1       244 ops/sec (2 runs of 2 calls in 1.639 out of 2.464 sec, +/- 0.00%)       40
-    qrpc w klogClient 100k stream 2       237 ops/sec (2 runs of 2 calls in 1.686 out of 2.546 sec, +/- 0.02%)       39
-    qrpc w klogClient 100k stream 3       224 ops/sec (2 runs of 2 calls in 1.781 out of 2.615 sec, +/- 0.04%)       36
+    arch=ia32 mhz=4418 cpuCount=8 cpu="Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz"
+    name                                speed           rate
+    express w request 1                 6,367 ops/sec   1000 >>>>>
+    express w request 2                 6,936 ops/sec   1089 >>>>>
+    express w request 3                 7,208 ops/sec   1132 >>>>>>
+    express w qhttp 1                  13,549 ops/sec   2128 >>>>>>>>>>>
+    express w qhttp 2                  13,822 ops/sec   2171 >>>>>>>>>>>
+    express w qhttp 3                  13,983 ops/sec   2196 >>>>>>>>>>>
+    restiq w qhttp 1                   14,637 ops/sec   2299 >>>>>>>>>>>
+    restiq w qhttp 2                   15,201 ops/sec   2387 >>>>>>>>>>>>
+    restiq w qhttp 3                   14,995 ops/sec   2355 >>>>>>>>>>>>
+    restiq w request 1                  7,853 ops/sec   1233 >>>>>>
+    restiq w request 2                  7,296 ops/sec   1146 >>>>>>
+    restiq w request 3                  7,128 ops/sec   1120 >>>>>>
+    qrpc w qrpc 1                      30,600 ops/sec   4806 >>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w qrpc 2                      31,495 ops/sec   4946 >>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w qrpc 3                      31,492 ops/sec   4946 >>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w qrpc 1k 1                   13,244 ops/sec   2080 >>>>>>>>>>
+    qrpc w qrpc 1k 2                   13,275 ops/sec   2085 >>>>>>>>>>
+    qrpc w qrpc 1k 3                   13,301 ops/sec   2089 >>>>>>>>>>
+    qrpc w klogClient 1                31,127 ops/sec   4889 >>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w klogClient 2                31,703 ops/sec   4979 >>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w klogClient 3                31,513 ops/sec   4949 >>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w klogClient 100k stream 1       238 ops/sec     37
+    qrpc w klogClient 100k stream 2       237 ops/sec     37
+    qrpc w klogClient 100k stream 3       239 ops/sec     38
 
 Under node-v8.0.0, request is 20% faster than and express + request is 30% faster than
 under node-v6.9.1, but both are still much slower than qrpc or just using qhttp.
