@@ -1,3 +1,5 @@
+if (process.argv[1].slice(-4) === 'qnit') return;
+
 var aflow = require('aflow');
 
 var fs = require('fs');
