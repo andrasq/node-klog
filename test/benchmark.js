@@ -22,6 +22,8 @@ var cluster = require('cluster');
 if (cluster.isMaster) {
     if (!cluster.isWorker) cluster.fork();
 
+    var testlog = fs.createWriteStream("testlog.log", {highWaterMark: 409600, flags: "a"});
+
     var server = klog.createServer({
         httpPort: 4244,
         qrpcPort: 4245,
@@ -31,6 +33,10 @@ if (cluster.isMaster) {
             'testlog': {
                 write: function(){},
                 fflush: function(cb) { cb() },
+            },
+            'testlog': {
+                write: function(str) { testlog.write(str) },
+                fflush: function(cb) { testlog.write("", cb) },
             },
             //'testlog': new Fputs(new Fputs.FileWriter("testlog.log", "a")),
             //'testlog': new Fputs(fs.createWriteStream("testlog.log", {highWaterMark: 409600, flags: "a"})),

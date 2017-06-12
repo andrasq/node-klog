@@ -64,6 +64,8 @@ Disconnect from the klog server.  Note that this does not `fflush`.
 Performance
 ----------------
 
+Realtime transport.
+
 Performance measured as the count of 200 byte log lines per second delivered to the
 log server, run with node-v6.9.1, timeGoal=10.0:
 
@@ -91,6 +93,10 @@ log server, run with node-v6.9.1, timeGoal=10.0:
 
 Under node-v8.0.0, request is 20% faster and express + request is 30% faster than
 under node-v6.9.1, but both are still much slower than qrpc or just using qhttp.
+
+Realtime transport with checkpoint.
+
+Journaled near-realtime transport with checkpoint.
 
 
 Related Work
