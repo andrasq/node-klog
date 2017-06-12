@@ -33,7 +33,7 @@ if (cluster.isMaster) {
                 fflush: function(cb) { cb() },
             },
             //'testlog': new Fputs(new Fputs.FileWriter("testlog.log", "a")),
-            'testlog': new Fputs(fs.createWriteStream("testlog.log", {highWaterMark: 409600, flags: "a"})),
+            //'testlog': new Fputs(fs.createWriteStream("testlog.log", {highWaterMark: 409600, flags: "a"})),
             'quit': {
                 fflush: function(cb) { server.close(cb) },
             },
@@ -195,9 +195,9 @@ if (cluster.isWorker) {
         'qrpc w klogClient pump 3': function(done) {
             log_100k_w_qrpc_klogClient_pump(klogClient, done);
         },
-        'flush': function(done) {
-            klogClient.fflush(done);
-        },
+        //'flush': function(done) {
+        //    klogClient.fflush(done);
+        //},
 
     }, function(err) {
 
