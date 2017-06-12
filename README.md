@@ -14,6 +14,21 @@ logs.  Logs can be uploaded a line at a time or from the logfile, via the API or
 with `curl -d @logfile`.  Log lines are written to file under a mutex, so multiple
 simultaneous writes will not collide.
 
+For easy integration with app-side logging, a klog client is usable as the qlogger
+writer for spooling logs to a local journal then sending them to a remote log server:
+
+    var qlogger = require('qlogger');
+
+    var loglevel = 'info';
+    var logname = 'testlog';
+    var klogClient = klog.createClient(logname, {
+        qrpcPort: 4245,
+        host: 'localhost',
+        journal: qlogger.createWriter('file:///var/log/testlog.jour', 'a'),
+    });
+
+    log = qlogger(loglevel, klogClient);
+
 
 API
 ----------------
@@ -114,4 +129,4 @@ TODO
 
 - rely on just write and fflush, deprecase sync (local journal is implementation detail; fflush to remote)
 - update readme for the above
-
+- add journaling to the client side
