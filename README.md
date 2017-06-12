@@ -64,29 +64,29 @@ Disconnect from the klog server.  Note that this does not `fflush`.
 Performance
 ----------------
 
-Performance with node-v6.9.1, timeGoal=4.0:
+Performance with node-v6.9.1, timeGoal=10.0:
 
     qtimeit=0.20.0 node=6.9.1 v8=5.1.281.84 platform=linux kernel=3.16.0-4-amd64 up_threshold=11
     arch=ia32 mhz=4416 cpuCount=8 cpu="Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz"
     name                    speed           rate
-    express w request 1     7,397 ops/sec    370 >>
-    express w request 2     7,517 ops/sec    376 >>
-    express w request 3     7,755 ops/sec    388 >>
-    express w qhttp 1      16,881 ops/sec    844 >>>>
-    express w qhttp 2      16,969 ops/sec    848 >>>>
-    express w qhttp 3      16,969 ops/sec    848 >>>>
-    restiq w qhttp 1       20,054 ops/sec   1003 >>>>>
-    restiq w qhttp 2       20,063 ops/sec   1003 >>>>>
-    restiq w qhttp 3       19,974 ops/sec    999 >>>>>
-    restiq w request 1      7,640 ops/sec    382 >>
-    restiq w request 2      7,776 ops/sec    389 >>
-    restiq w request 3      7,741 ops/sec    387 >>
-    qrpc w qrpc 1         181,231 ops/sec   9062 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w qrpc 2         188,055 ops/sec   9403 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w qrpc 3         188,917 ops/sec   9446 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w klogClient 1   189,825 ops/sec   9491 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w klogClient 2   190,908 ops/sec   9545 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w klogClient 3   190,291 ops/sec   9515 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    express w request 1     7,275 ops/sec    364 >>
+    express w request 2     7,643 ops/sec    382 >>
+    express w request 3     7,656 ops/sec    383 >>
+    express w qhttp 1      16,948 ops/sec    847 >>>>
+    express w qhttp 2      16,956 ops/sec    848 >>>>
+    express w qhttp 3      16,945 ops/sec    847 >>>>
+    restiq w qhttp 1       20,070 ops/sec   1004 >>>>>
+    restiq w qhttp 2       20,077 ops/sec   1004 >>>>>
+    restiq w qhttp 3       20,176 ops/sec   1009 >>>>>
+    restiq w request 1      7,668 ops/sec    383 >>
+    restiq w request 2      7,722 ops/sec    386 >>
+    restiq w request 3      7,727 ops/sec    386 >>
+    qrpc w qrpc 1         182,229 ops/sec   9111 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w qrpc 2         183,844 ops/sec   9192 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w qrpc 3         182,942 ops/sec   9147 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w klogClient 1   182,116 ops/sec   9106 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w klogClient 2   182,076 ops/sec   9104 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w klogClient 3   182,388 ops/sec   9119 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 Under node-v8.0.0, request is 20% faster and express + request is 30% faster than
 under node-v6.9.1, but both are still much slower than qrpc or just using qhttp.
