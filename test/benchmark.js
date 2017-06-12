@@ -3,7 +3,7 @@ var aflow = require('aflow');
 var fs = require('fs');
 var request = require('request');
 var http = require('http');
-var httpAgent = new http.Agent({ keepAlive: true, maxSockets: 40 });
+var httpAgent = new http.Agent({ keepAlive: true, maxSockets: 10 });
 var Url = require('url');
 var qhttp = require('qhttp');
 var Fputs = require('qfputs');
@@ -44,20 +44,22 @@ if (cluster.isMaster) {
 
             // mutexed log writer
             //'testlog': new Fputs(new Fputs.FileWriter("testlog.log", "a")),
-
-            'quit': {
-                fflush: function(cb) {
-                    console.log("AR: closing klog server");
-                    server.close(cb)
-                },
-            },
         },
     }, function(err, svr) {
         // server listening
+        // add a hook so the tests can close the server
+        if (server.qrpcServer) server.qrpcServer.addHandler('quit', function(req, res, next) {
+console.log("AR: quit server (qrpc)");
+            server.close(next);
+        })
+        if (server.httpServer) server.httpServer.addRoute('/quit', function(req, res, next) {
+console.log("AR: quit server (http)");
+            server.close(next);
+        })
     });
 }
-if (cluster.isWorker) {
 
+if (cluster.isWorker) {
     var client, klogClient;
 
     qtimeit.bench.showRunDetails = false;
@@ -80,9 +82,9 @@ if (cluster.isWorker) {
     },
 
     function(next) {
-//        return next();
+        // note: this test chews up free sockets, omit
+        return next();
 
-        // note: this test chews up free sockets
         console.log("");
         qtimeit.bench.timeGoal = 0.4;
         qtimeit.bench({
@@ -180,8 +182,7 @@ if (cluster.isWorker) {
 
     function(next) {
 
-        // close the test server with "/quit/fflush", allowing the parent to exit
-        client.call('logname', 'quit');
+        client.call('quit');
         client.call('sync', function(err) {
             client.close(function(){
                 klogClient.close();
