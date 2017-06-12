@@ -72,7 +72,6 @@ if (cluster.isWorker) {
     function(next) {
         client = qrpc.connect(4245, 'localhost', function(socket) {
             socket.setNoDelay(true);
-            client.call('logname', 'testlog');
             next();
         })
     },
@@ -112,6 +111,7 @@ if (cluster.isWorker) {
         qtimeit.bench.timeGoal = 0.40;
         qtimeit.bench.opsPerTest = 100;
         qtimeit.bench.baselineAvg = 20000;
+
         qtimeit.bench({
 
         'express w request 1': function(done) { log_100_w_express_request(done) },
@@ -154,7 +154,15 @@ if (cluster.isWorker) {
         'qrpc w klogClient 10k 3': function(done) { log_10k_w_qrpc_klogClient(klogClient, done) },
         // 192k/s relayed, 194k/s written (250k/s 100k ea)
 
-/**
+        }, next);
+    },
+
+    function(next) {
+        return next();
+
+        console.log("");
+        qtimeit.bench({
+
         'qrpc w qrpc obj 1': function(done) { log_100_w_qrpc_qrpc_obj(client, done) },
         'qrpc w qrpc obj 2': function(done) { log_100_w_qrpc_qrpc_obj(client, done) },
         'qrpc w qrpc obj 3': function(done) { log_100_w_qrpc_qrpc_obj(client, done) },
@@ -173,25 +181,21 @@ if (cluster.isWorker) {
         'qrpc w klogClient pump 1': function(done) { log_100k_w_qrpc_klogClient_pump(klogClient, done) },
         'qrpc w klogClient pump 2': function(done) { log_100k_w_qrpc_klogClient_pump(klogClient, done) },
         'qrpc w klogClient pump 3': function(done) { log_100k_w_qrpc_klogClient_pump(klogClient, done) },
-**/
-        }, next)
-    },
 
-    function(next) {
-        qtimeit.bench({
         }, next)
     },
 
     function(next) {
 
-        client.call('quit');
-        client.call('sync', function(err) {
-            client.close(function(){
-                klogClient.close();
-                console.log("AR: Done.");
+        client.call('testlog_fflush', function(err) {
+            client.call('quit', function(err, ret) {
+                client.close(function(){
+                    klogClient.close();
+                    console.log("AR: Done.");
 // force the client to exit, this causes the parent to exit too
 // TODO: worker should exit when the clients are closed
 process.exit();
+                })
             })
         })
     },
@@ -218,7 +222,7 @@ function log_100_w_express_request( done ) {
     function whenDone(err, res, body) {
         ndone += 1;
         if (ndone === nloops) {
-            request.post("http://localhost:4246/testlog/sync", function(err, res) {
+            request.post("http://localhost:4246/testlog/fflush", function(err, res) {
                 done();
             })
         }
@@ -241,7 +245,7 @@ function log_100_w_express_qhttp( done ) {
     function whenDone(err, res, body) {
         ndone += 1;
         if (ndone === nloops) {
-            qhttp.post("http://localhost:4246/testlog/sync", done);
+            qhttp.post("http://localhost:4246/testlog/fflush", done);
         }
     }
 }
@@ -262,7 +266,7 @@ function log_100_w_restiq_qhttp( done ) {
     function whenDone(err, res, body) {
         ndone += 1;
         if (ndone === nloops) {
-            qhttp.post("http://localhost:4244/testlog/sync", done);
+            qhttp.post("http://localhost:4244/testlog/fflush", done);
         }
     }
 }
@@ -283,34 +287,34 @@ function log_100_w_restiq_request( done ) {
     function whenDone(err, res, body) {
         ndone += 1;
         if (ndone === nloops) {
-            request.post("http://localhost:4244/testlog/sync", done);
+            request.post("http://localhost:4244/testlog/fflush", done);
         }
     }
 }
 
 function log_100_w_qrpc_qrpc( client, done ) {
     for (var i=0; i<100; i++) {
-        client.call('write', loglines[i]);
+        client.call('testlog_write', loglines[i]);
     }
-    client.call('sync', function(err, ret) {
+    client.call('testlog_fflush', function(err, ret) {
         done();
     })
 }
 
 function log_100_w_qrpc_qrpc_obj( client, done ) {
     for (var i=0; i<100; i++) {
-        client.call('write', { nm: 'testlog', d: loglines[i] });
+        client.call('testlog_write', { nm: 'testlog', d: loglines[i] });
     }
-    client.call('sync', function(err, ret) {
+    client.call('testlog_fflush', function(err, ret) {
         done();
     })
 }
 
 function log_1000_w_qrpc_qrpc( client, done ) {
     for (var i=0; i<100; i++) {
-        client.call('write', loglines[i]);
+        client.call('testlog_write', loglines[i]);
     }
-    if (Math.random() <= 0.10) client.call('sync', done);
+    if (Math.random() <= 0.10) client.call('testlog_fflush', done);
     else done();
 }
 
@@ -318,7 +322,7 @@ function log_100_w_qrpc_klogClient( klogClient, done ) {
     for (var i=0; i<100; i++) {
         klogClient.write(loglines[i]);
     }
-    client.call('sync', function(err, ret) {
+    klogClient.fflush(function(err, ret) {
         done();
     })
 }
@@ -327,7 +331,7 @@ function log_1000_w_qrpc_klogClient( klogClient, done ) {
     for (var i=0; i<100; i++) {
         klogClient.write(loglines[i]);
     }
-    if (Math.random() <= 0.10) client.call('sync', done);
+    if (Math.random() <= 0.10) klogClient.fflush(done);
     else done();
 }
 
@@ -335,7 +339,7 @@ function log_10k_w_qrpc_klogClient( klogClient, done ) {
     for (var i=0; i<100; i++) {
         klogClient.write(loglines[i]);
     }
-    if (Math.random() <= 0.01) client.call('sync', done);
+    if (Math.random() <= 0.01) klogClient.fflush(done);
     else done();
 }
 
@@ -343,7 +347,7 @@ function log_100k_w_qrpc_klogClient( klogClient, done ) {
     for (var i=0; i<100; i++) {
         klogClient.write(loglines[i]);
     }
-    if (Math.random() <= 0.001) client.call('sync', done);
+    if (Math.random() <= 0.001) klogClient.fflush(done);
     else done();
 }
 

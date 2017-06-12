@@ -76,7 +76,7 @@ module.exports = {
                             if (cb) cb()
                         },
                         fflush: function(cb) {
-                            testlog.push('__sync__');
+                            testlog.push('__fflush__');
                             cb()
                         },
                     }
@@ -130,11 +130,11 @@ module.exports = {
                 })
             },
 
-            'should sync log': function(t) {
+            'should fflush log': function(t) {
                 var self = this;
-                qhttp.post("http://localhost:4244/testlog/sync", "logline", function(err, res, body) {
+                qhttp.post("http://localhost:4244/testlog/fflush", "logline", function(err, res, body) {
                     t.equal(res.statusCode, 200);
-                    t.deepEqual(self.testlog, [ '__sync__' ]);
+                    t.deepEqual(self.testlog, [ '__fflush__' ]);
                     t.done();
                 })
             },
@@ -150,9 +150,9 @@ module.exports = {
             'http server should call _doHttpLogSync': function(t) {
                 var self = this;
                 var spy = t.spyOnce(this.server, '_doHttpLogSync');
-                qhttp.post("http://localhost:4244/testlog/sync", "logline", function(err, res, body) {
+                qhttp.post("http://localhost:4244/testlog/fflush", "logline", function(err, res, body) {
                     t.equal(spy.callCount, 1);
-                    t.equal(self.testlog[0], '__sync__');
+                    t.equal(self.testlog[0], '__fflush__');
                     t.done();
                 })
             },
@@ -168,9 +168,9 @@ module.exports = {
             'express server should call _doHttpLogSync': function(t) {
                 var self = this;
                 var spy = t.spyOnce(this.server, '_doHttpLogSync');
-                qhttp.post("http://localhost:4246/testlog/sync", "logline", function(err, res, body) {
+                qhttp.post("http://localhost:4246/testlog/fflush", "logline", function(err, res, body) {
                     t.equal(spy.callCount, 1);
-                    t.equal(self.testlog[0], '__sync__');
+                    t.equal(self.testlog[0], '__fflush__');
                     t.done();
                 })
             },
@@ -180,12 +180,12 @@ module.exports = {
             'should log lines': function(t) {
                 var self = this;
                 var client = qrpc.connect(4245, 'localhost', function(socket) {
-                    client.call('logname', 'testlog');
-                    client.call('write', 'logline1\n');
-                    client.call('write', 'logline2\nlogline3\n');
-                    client.call('write', new Buffer('logline4\n'));
-                    client.call('sync', function() {
-                        t.deepEqual(self.testlog, ['logline1\n', 'logline2\nlogline3\n', new Buffer('logline4\n'), '__sync__']);
+                    socket.setNoDelay(true);
+                    client.call('testlog_write', 'logline1\n');
+                    client.call('testlog_write', 'logline2\nlogline3\n');
+                    client.call('testlog_write', new Buffer('logline4\n'));
+                    client.call('testlog_fflush', function() {
+                        t.deepEqual(self.testlog, ['logline1\n', 'logline2\nlogline3\n', new Buffer('logline4\n'), '__fflush__']);
                         t.done();
                     })
                 })
