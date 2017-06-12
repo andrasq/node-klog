@@ -35,7 +35,10 @@ if (cluster.isMaster) {
             //'testlog': new Fputs(new Fputs.FileWriter("testlog.log", "a")),
             //'testlog': new Fputs(fs.createWriteStream("testlog.log", {highWaterMark: 409600, flags: "a"})),
             'quit': {
-                fflush: function(cb) { server.close(cb) },
+                fflush: function(cb) {
+                    console.log("AR: closing klog server");
+                    server.close(cb)
+                },
             },
         },
     }, function(err, svr) {
@@ -56,11 +59,13 @@ if (cluster.isWorker) {
     qtimeit.bench.opsPerTest = 100;
     qtimeit.bench.visualize = true;
     qtimeit.bench.showRunDetails = false;
-    setTimeout(function(){ qtimeit.bench({
+    qtimeit.bench.baselineAvg = 20000;
+    setTimeout(qtimeit.bench, 250,
+    {
 /**
         'qrpc.connect': function(done) {
-            var client = qrpc.connect(4245, 'localhost', function(socket) {
-                client.close();
+            var client3 = qrpc.connect(4245, 'localhost', function(socket) {
+                client3.close();
                 done();
             })
             // 13k/s
@@ -140,6 +145,7 @@ if (cluster.isWorker) {
             // 31 k/s
         },
 
+/**
         'qrpc w qrpc 1k x10 1': function(done) {
             log_1000_w_qrpc_qrpc(client, done);
         },
@@ -150,6 +156,7 @@ if (cluster.isWorker) {
             log_1000_w_qrpc_qrpc(client, done);
             // 134 k/s
         },
+**/
 
         'qrpc w klogClient 1': function(done) {
             log_100_w_qrpc_klogClient(klogClient, done);
@@ -162,9 +169,8 @@ if (cluster.isWorker) {
             // 31 k/s
         },
 
+/**
         'qrpc w klogClient 100k x1000 stream 1': function(done) {
-// FIXME: if running for 2.0 sec works, but for 0.5 sec errors out with
-// RangeError: Maximum call stack size exceeded at qtimeit/timeit.js:579:36
             log_100k_w_qrpc_klogClient(klogClient, done);
         },
         'qrpc w klogClient 100k x1000 stream 2': function(done) {
@@ -198,84 +204,24 @@ if (cluster.isWorker) {
         //'flush': function(done) {
         //    klogClient.fflush(done);
         //},
+**/
 
-    }, function(err) {
+    },
+    function(err) {
 
-    var client = qrpc.connect(4245, 'localhost', function(socket) {
-        // for logging we need to turn off the Nagle algorithm, else only does 40 syncs per second
-        socket.setNoDelay();
-
-        aflow.series([
-            function(next) {
-                // wait for server to be created
-                setTimeout(next, 100);
-            },
-
-            function(next) {
-                console.log("");
-                console.log("qrpc with qrpc");
-                console.time('qrpc');
-// TODO: use klog-client to make calls
-                client.call('logname', 'testlog');
-                for (var i=0; i<10000; i++) {
-                    client.call('write', loglines[i]);
-                }
-                client.call('sync', function(err, ret) {
-                    console.timeEnd('qrpc');
-                    next();
-                })
-            },
-
-            function(next) {
-                console.log("");
-                console.log("qrpc with qrpc");
-                console.time('qrpc');
-// TODO: use klog-client to make calls
-                client.call('logname', 'testlog');
-                for (var i=0; i<10000; i++) {
-                    client.call('write', loglines[i]);
-                }
-                client.call('sync', function(err, ret) {
-                    console.timeEnd('qrpc');
-                    next();
-                })
-            },
-
-            function(next) {
-                console.log("");
-                console.log("qrpc with qrpc");
-                console.time('qrpc');
-// TODO: use klog-client to make calls
-                client.call('logname', 'testlog');
-                var ncalls = 0;
-                aflow.repeatWhile(
-                    function(){ return ncalls < 10000 },
-                    function(done) {
-                        for (var i=0; i<1000; i++) client.call('write', loglines[ncalls + i]);
-                        ncalls += i;
-                        client.call('sync', done);
-                    },
-                    function(err) {
-                        console.timeEnd('qrpc');
-                        next();
-                    }
-                );
-            },
-
-        ],
-        function(err) {
-            if (err) throw err;
-            qhttp.post("http://localhost:4244/quit/sync", function(err, res, body) {
+        // close the test server with "/quit/fflush", allowing the parent to exit
+        client.call('logname', 'quit');
+        client.call('sync', function(err) {
+            client.close(function(){
+                klogClient.close();
                 console.log("AR: Done.");
-                client.close()
-// FIXME: something isnt closed, keeps program resident...
+// force the client to exit, this causes the parent to exit too
+// TODO: worker should exit when the clients are closed
+process.exit();
             })
-        });
+        })
 
-    })
-
-    })
-    }, 250);
+    });
 }
 
 function log_100_w_express_request( done ) {
@@ -295,9 +241,6 @@ function log_100_w_express_request( done ) {
         ndone += 1;
         if (ndone === nloops) {
             request.post("http://localhost:4246/testlog/sync", function(err, res) {
-// FIXME: RangeError: Maximum call stack size exceeded in qtimeit ?!
-// works @ 100
-// ... could not reproduce
                 done();
             })
         }
