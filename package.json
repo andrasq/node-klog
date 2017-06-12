@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "fast remote logging service",
   "main": "index.js",
+  "readmeFilename": "README.md",
   "license": "",
   "private": true,
   "repository": {
