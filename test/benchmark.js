@@ -145,19 +145,6 @@ if (cluster.isWorker) {
             // 31 k/s
         },
 
-/**
-        'qrpc w qrpc 1k x10 1': function(done) {
-            log_1000_w_qrpc_qrpc(client, done);
-        },
-        'qrpc w qrpc 1k x10 2': function(done) {
-            log_1000_w_qrpc_qrpc(client, done);
-        },
-        'qrpc w qrpc 1k x10 3': function(done) {
-            log_1000_w_qrpc_qrpc(client, done);
-            // 134 k/s
-        },
-**/
-
         'qrpc w klogClient 1': function(done) {
             log_100_w_qrpc_klogClient(klogClient, done);
         },
@@ -169,26 +156,37 @@ if (cluster.isWorker) {
             // 31 k/s
         },
 
-/**
-        'qrpc w klogClient 100k x1000 stream 1': function(done) {
-            log_100k_w_qrpc_klogClient(klogClient, done);
+        'qrpc w qrpc 1k 1': function(done) {
+            log_1000_w_qrpc_qrpc(client, done);
         },
-        'qrpc w klogClient 100k x1000 stream 2': function(done) {
-            log_100k_w_qrpc_klogClient(klogClient, done);
+        'qrpc w qrpc 1k 2': function(done) {
+            log_1000_w_qrpc_qrpc(client, done);
         },
-        'qrpc w klogClient 100k x1000 stream 3': function(done) {
-            log_100k_w_qrpc_klogClient(klogClient, done);
+        'qrpc w qrpc 1k 3': function(done) {
+            log_1000_w_qrpc_qrpc(client, done);
+            // 134 k/s
+        },
+
+        'qrpc w klogClient 10k 1': function(done) {
+            log_10k_w_qrpc_klogClient(klogClient, done);
+        },
+        'qrpc w klogClient 10k 2': function(done) {
+            log_10k_w_qrpc_klogClient(klogClient, done);
+        },
+        'qrpc w klogClient 10k 3': function(done) {
+            log_10k_w_qrpc_klogClient(klogClient, done);
             // 250 k/s 100k, 190 k/s 10k, 140 k/s 1k lines per sync
         },
 
-        'qrpc w klogClient 10k x100 stream 1': function(done) {
-            log_10k_w_qrpc_klogClient(klogClient, done);
+/**
+        'qrpc w klogClient 100k 1': function(done) {
+            log_100k_w_qrpc_klogClient(klogClient, done);
         },
-        'qrpc w klogClient 10k x100 stream 2': function(done) {
-            log_10k_w_qrpc_klogClient(klogClient, done);
+        'qrpc w klogClient 100k 2': function(done) {
+            log_100k_w_qrpc_klogClient(klogClient, done);
         },
-        'qrpc w klogClient 10k x100 stream 3': function(done) {
-            log_10k_w_qrpc_klogClient(klogClient, done);
+        'qrpc w klogClient 100k 3': function(done) {
+            log_100k_w_qrpc_klogClient(klogClient, done);
             // 250 k/s 100k, 190 k/s 10k, 140 k/s 1k lines per sync
         },
 
@@ -320,12 +318,11 @@ function log_100_w_qrpc_qrpc( client, done ) {
 }
 
 function log_1000_w_qrpc_qrpc( client, done ) {
-    for (var i=0; i<1000; i++) {
+    for (var i=0; i<100; i++) {
         client.call('write', loglines[i]);
     }
-    client.call('sync', function(err, ret) {
-        done();
-    })
+    if (Math.random() <= 0.10) client.call('sync', done);
+    else done();
 }
 
 function log_100_w_qrpc_klogClient( klogClient, done ) {
@@ -337,18 +334,20 @@ function log_100_w_qrpc_klogClient( klogClient, done ) {
     })
 }
 
-function log_100k_w_qrpc_klogClient( klogClient, done ) {
-    for (var i=0; i<100000; i++) {
+function log_10k_w_qrpc_klogClient( klogClient, done ) {
+    for (var i=0; i<100; i++) {
         klogClient.write(loglines[i]);
     }
-    klogClient.fflush(done);
+    if (Math.random() <= 0.01) client.call('sync', done);
+    else done();
 }
 
-function log_10k_w_qrpc_klogClient( klogClient, done ) {
-    for (var i=0; i<10000; i++) {
+function log_100k_w_qrpc_klogClient( klogClient, done ) {
+    for (var i=0; i<100; i++) {
         klogClient.write(loglines[i]);
     }
-    klogClient.fflush(done);
+    if (Math.random() <= 0.001) client.call('sync', done);
+    else done();
 }
 
 function log_100k_w_qrpc_klogClient_pump( klogClient, done ) {

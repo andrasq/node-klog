@@ -64,7 +64,8 @@ Disconnect from the klog server.  Note that this does not `fflush`.
 Performance
 ----------------
 
-Performance with node-v6.9.1, timeGoal=10.0:
+Performance measured as the count of 200 byte log lines per second delivered to the
+log server, run with node-v6.9.1, timeGoal=10.0:
 
     qtimeit=0.20.0 node=6.9.1 v8=5.1.281.84 platform=linux kernel=3.16.0-4-amd64 up_threshold=11
     arch=ia32 mhz=4416 cpuCount=8 cpu="Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz"
