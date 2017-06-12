@@ -17,9 +17,10 @@ var x190 = "x".repeat(190);
 var loglines = new Array();
 for (var i=0; i<10000; i++) loglines.push(qprintf.sprintf("%s%09d\n", x190, i));
 
+//var cluster = { isMaster: true, isWorker: true };
 var cluster = require('cluster');
 if (cluster.isMaster) {
-    cluster.fork();
+    if (!cluster.isWorker) cluster.fork();
 
     var server = klog.createServer({
         httpPort: 4244,
@@ -41,7 +42,7 @@ if (cluster.isMaster) {
         // server listening
     });
 }
-else {
+if (cluster.isWorker) {
 
     var client = qrpc.connect(4245, 'localhost', function(socket) {
         socket.setNoDelay(true);
@@ -51,7 +52,7 @@ else {
     var klogClient = klog.createClient('testlog', { qrpcPort: 4245, host: 'localhost' }, function(c) {
     });
 
-    qtimeit.bench.timeGoal = 2.0;
+    qtimeit.bench.timeGoal = 0.40;
     qtimeit.bench.opsPerTest = 100;
     qtimeit.bench.visualize = true;
     qtimeit.bench.showRunDetails = false;
@@ -161,15 +162,41 @@ else {
             // 31 k/s
         },
 
-        'qrpc w klogClient 100k x100 stream 1': function(done) {
+        'qrpc w klogClient 100k x1000 stream 1': function(done) {
+// FIXME: if running for 2.0 sec works, but for 0.5 sec errors out with
+// RangeError: Maximum call stack size exceeded at qtimeit/timeit.js:579:36
             log_100k_w_qrpc_klogClient(klogClient, done);
         },
-        'qrpc w klogClient 100k x100 stream 2': function(done) {
+        'qrpc w klogClient 100k x1000 stream 2': function(done) {
             log_100k_w_qrpc_klogClient(klogClient, done);
         },
-        'qrpc w klogClient 100k x100 stream 3': function(done) {
+        'qrpc w klogClient 100k x1000 stream 3': function(done) {
             log_100k_w_qrpc_klogClient(klogClient, done);
             // 250 k/s 100k, 190 k/s 10k, 140 k/s 1k lines per sync
+        },
+
+        'qrpc w klogClient 10k x100 stream 1': function(done) {
+            log_10k_w_qrpc_klogClient(klogClient, done);
+        },
+        'qrpc w klogClient 10k x100 stream 2': function(done) {
+            log_10k_w_qrpc_klogClient(klogClient, done);
+        },
+        'qrpc w klogClient 10k x100 stream 3': function(done) {
+            log_10k_w_qrpc_klogClient(klogClient, done);
+            // 250 k/s 100k, 190 k/s 10k, 140 k/s 1k lines per sync
+        },
+
+        'qrpc w klogClient pump 1': function(done) {
+            log_100k_w_qrpc_klogClient_pump(klogClient, done);
+        },
+        'qrpc w klogClient pump 2': function(done) {
+            log_100k_w_qrpc_klogClient_pump(klogClient, done);
+        },
+        'qrpc w klogClient pump 3': function(done) {
+            log_100k_w_qrpc_klogClient_pump(klogClient, done);
+        },
+        'flush': function(done) {
+            klogClient.fflush(done);
         },
 
     }, function(err) {
@@ -372,4 +399,18 @@ function log_100k_w_qrpc_klogClient( klogClient, done ) {
         klogClient.write(loglines[i]);
     }
     klogClient.fflush(done);
+}
+
+function log_10k_w_qrpc_klogClient( klogClient, done ) {
+    for (var i=0; i<10000; i++) {
+        klogClient.write(loglines[i]);
+    }
+    klogClient.fflush(done);
+}
+
+function log_100k_w_qrpc_klogClient_pump( klogClient, done ) {
+    for (var i=0; i<1000; i++) {
+        klogClient.write(loglines[i]);
+    }
+    done();
 }
