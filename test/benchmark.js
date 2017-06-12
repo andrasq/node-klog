@@ -34,12 +34,12 @@ if (cluster.isMaster) {
                 write: function(){},
                 fflush: function(cb) { cb() },
             },
-            'testlog': {
-                write: function(str) { testlog.write(str) },
-                fflush: function(cb) { testlog.write("", cb) },
-            },
-            //'testlog': new Fputs(new Fputs.FileWriter("testlog.log", "a")),
+            //'testlog': {
+            //    write: function(str) { testlog.write(str) },
+            //    fflush: function(cb) { testlog.write("", cb) },
+            //},
             //'testlog': new Fputs(fs.createWriteStream("testlog.log", {highWaterMark: 409600, flags: "a"})),
+            //'testlog': new Fputs(new Fputs.FileWriter("testlog.log", "a")),
             'quit': {
                 fflush: function(cb) {
                     console.log("AR: closing klog server");

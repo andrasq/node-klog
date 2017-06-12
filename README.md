@@ -24,7 +24,7 @@ writer for spooling logs to a local journal then sending them to a remote log se
     var klogClient = klog.createClient(logname, {
         qrpcPort: 4245,
         host: 'localhost',
-        journal: qlogger.createWriter('file:///var/log/testlog.jour', 'a'),
+        journal: "testlog.jour",
     });
 
     log = qlogger(loglevel, klogClient);
@@ -82,29 +82,36 @@ Performance
 Realtime transport.
 
 Performance measured as the count of 200 byte log lines per second delivered to the
-log server, run with node-v6.9.1, timeGoal=10.0:
+log server:
 
     qtimeit=0.20.0 node=6.9.1 v8=5.1.281.84 platform=linux kernel=3.16.0-4-amd64 up_threshold=11
-    arch=ia32 mhz=4416 cpuCount=8 cpu="Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz"
-    name                    speed           rate
-    express w request 1     7,275 ops/sec    364 >>
-    express w request 2     7,643 ops/sec    382 >>
-    express w request 3     7,656 ops/sec    383 >>
-    express w qhttp 1      16,948 ops/sec    847 >>>>
-    express w qhttp 2      16,956 ops/sec    848 >>>>
-    express w qhttp 3      16,945 ops/sec    847 >>>>
-    restiq w qhttp 1       20,070 ops/sec   1004 >>>>>
-    restiq w qhttp 2       20,077 ops/sec   1004 >>>>>
-    restiq w qhttp 3       20,176 ops/sec   1009 >>>>>
-    restiq w request 1      7,668 ops/sec    383 >>
-    restiq w request 2      7,722 ops/sec    386 >>
-    restiq w request 3      7,727 ops/sec    386 >>
-    qrpc w qrpc 1         182,229 ops/sec   9111 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w qrpc 2         183,844 ops/sec   9192 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w qrpc 3         182,942 ops/sec   9147 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w klogClient 1   182,116 ops/sec   9106 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w klogClient 2   182,076 ops/sec   9104 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w klogClient 3   182,388 ops/sec   9119 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    arch=ia32 mhz=4419 cpuCount=8 cpu="Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz"
+    timeGoal=4.4 opsPerTest=100 forkTests=false
+    name                        speed           rate
+    express w request 1         7,402 ops/sec    370 >>
+    express w request 2         7,674 ops/sec    384 >>
+    express w request 3         7,696 ops/sec    385 >>
+    restiq w request 1          7,619 ops/sec    381 >>
+    restiq w request 2          7,729 ops/sec    386 >>
+    restiq w request 3          7,681 ops/sec    384 >>
+    express w qhttp 1          17,279 ops/sec    864 >>>>
+    express w qhttp 2          17,194 ops/sec    860 >>>>
+    express w qhttp 3          17,174 ops/sec    859 >>>>
+    restiq w qhttp 1           20,390 ops/sec   1020 >>>>>
+    restiq w qhttp 2           20,261 ops/sec   1013 >>>>>
+    restiq w qhttp 3           20,058 ops/sec   1003 >>>>>
+    qrpc w qrpc 1             177,453 ops/sec   8873 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w qrpc 2             180,299 ops/sec   9015 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w qrpc 3             187,126 ops/sec   9356 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w klogClient 1       181,743 ops/sec   9087 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w klogClient 2       187,490 ops/sec   9375 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w klogClient 3       188,680 ops/sec   9434 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w qrpc 1k 1          202,832 ops/sec  10142 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w qrpc 1k 2          203,937 ops/sec  10197 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w qrpc 1k 3          204,159 ops/sec  10208 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w klogClient 10k 1   196,647 ops/sec   9832 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w klogClient 10k 2   197,196 ops/sec   9860 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w klogClient 10k 3   197,629 ops/sec   9881 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 Under node-v8.0.0, request is 20% faster and express + request is 30% faster than
 under node-v6.9.1, but both are still much slower than qrpc or just using qhttp.
@@ -117,11 +124,12 @@ Journaled near-realtime transport with checkpoint.
 Related Work
 ----------------
 
-- [qrpc](https://npmjs.com/package/qrpc) - very fast rpc
-- [qhttp](https://npmjs.com/package/qhttp) - fast convenience wrapper around `http`
-- [request](https://npmjs.com/package/request) - featureful but slow http request library
 - [express](https://npmjs.com/package/express) - featureful REST framework
+- [request](https://npmjs.com/package/request) - featureful but slow http request library
 - [restiq](https://npmjs.com/package/restiq) - light-weight REST framework
+- [qhttp](https://npmjs.com/package/qhttp) - fast convenience wrapper around `http`
+- [qlogger](https://npmjs.com/package/qlogger) - very fast, very flexible logging
+- [qrpc](https://npmjs.com/package/qrpc) - very fast rpc
 
 
 TODO
@@ -130,3 +138,4 @@ TODO
 - rely on just write and fflush, deprecase sync (local journal is implementation detail; fflush to remote)
 - update readme for the above
 - add journaling to the client side
+- SIGTERM handler to shut down cleanly: close inbound sockets, wait for current writes to complete
