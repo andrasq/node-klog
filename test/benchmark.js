@@ -107,6 +107,8 @@ if (cluster.isWorker) {
     },
 
     function(next) {
+        return next();
+
         console.log("");
         qtimeit.bench.timeGoal = 0.40;
         qtimeit.bench.opsPerTest = 100;
@@ -161,6 +163,8 @@ if (cluster.isWorker) {
         return next();
 
         console.log("");
+        qtimeit.bench.timeGoal = 0.40;
+        qtimeit.bench.opsPerTest = 100;
         qtimeit.bench({
 
         'qrpc w qrpc obj 1': function(done) { log_100_w_qrpc_qrpc_obj(client, done) },
@@ -181,6 +185,33 @@ if (cluster.isWorker) {
         'qrpc w klogClient pump 1': function(done) { log_100k_w_qrpc_klogClient_pump(klogClient, done) },
         'qrpc w klogClient pump 2': function(done) { log_100k_w_qrpc_klogClient_pump(klogClient, done) },
         'qrpc w klogClient pump 3': function(done) { log_100k_w_qrpc_klogClient_pump(klogClient, done) },
+
+        }, next)
+    },
+
+    function(next) {
+        klogClient = klog.createClient('testlog', {
+            qrpcPort: 4245,
+            host: 'localhost',
+            journal: 'testlog.jour',
+        }, next);
+    },
+
+    function(next) {
+        console.log("");
+        qtimeit.bench.timeGoal = 0.40;
+        qtimeit.bench.opsPerTest = 100;
+        qtimeit.bench({
+
+        'restiq w qhttp 1': function(done) { log_100_w_restiq_qhttp(done) },
+        'restiq w qhttp 2': function(done) { log_100_w_restiq_qhttp(done) },
+        'restiq w qhttp 3': function(done) { log_100_w_restiq_qhttp(done) },
+        //
+
+        'qrpc w klogClient 1': function(done) { log_100_w_qrpc_klogClient(klogClient, done) },
+        'qrpc w klogClient 2': function(done) { log_100_w_qrpc_klogClient(klogClient, done) },
+        'qrpc w klogClient 3': function(done) { log_100_w_qrpc_klogClient(klogClient, done) },
+        //
 
         }, next)
     },
