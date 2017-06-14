@@ -109,16 +109,41 @@ log server:
     qrpc w qrpc 1k 1          202,832 ops/sec  10142 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     qrpc w qrpc 1k 2          203,937 ops/sec  10197 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     qrpc w qrpc 1k 3          204,159 ops/sec  10208 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w klogClient 10k 1   196,647 ops/sec   9832 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w klogClient 10k 2   197,196 ops/sec   9860 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w klogClient 10k 3   197,629 ops/sec   9881 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    journaled klogClient      480,000 ops/sec  24000
 
 Under node-v8.0.0, request is 20% faster and express + request is 30% faster than
 under node-v6.9.1, but both are still much slower than qrpc or just using qhttp.
 
 Realtime transport with checkpoint.
 
-Journaled near-realtime transport with checkpoint.
+    qtimeit=0.20.0 node=6.9.1 v8=5.1.281.84 platform=linux kernel=3.16.0-4-amd64 up_threshold=11
+    arch=ia32 mhz=4417 cpuCount=8 cpu="Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz"
+    timeGoal=10 opsPerTest=100 forkTests=false
+    name                        speed           rate
+    express w request 1         6,770 ops/sec    339 >>
+    express w request 2         6,814 ops/sec    341 >>
+    express w request 3         6,808 ops/sec    340 >>
+    restiq w request 1          6,841 ops/sec    342 >>
+    restiq w request 2          6,713 ops/sec    336 >>
+    restiq w request 3          6,677 ops/sec    334 >>
+    express w qhttp 1          12,480 ops/sec    624 >>>
+    express w qhttp 2          12,552 ops/sec    628 >>>
+    express w qhttp 3          12,465 ops/sec    623 >>>
+    restiq w qhttp 1           13,220 ops/sec    661 >>>
+    restiq w qhttp 2           14,065 ops/sec    703 >>>>
+    restiq w qhttp 3           14,141 ops/sec    707 >>>>
+    qrpc w qrpc 1              29,995 ops/sec   1500 >>>>>>>>
+    qrpc w qrpc 2              31,213 ops/sec   1561 >>>>>>>>
+    qrpc w qrpc 3              31,358 ops/sec   1568 >>>>>>>>
+    qrpc w klogClient 1        28,956 ops/sec   1448 >>>>>>>
+    qrpc w klogClient 2        31,309 ops/sec   1565 >>>>>>>>
+    qrpc w klogClient 3        31,431 ops/sec   1572 >>>>>>>>
+    qrpc w klogClient 1k 1    116,748 ops/sec   5837 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w klogClient 1k 2    137,948 ops/sec   6897 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    qrpc w klogClient 1k 3    113,342 ops/sec   5667 >>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    journaled klogClient      370,000 ops/sec  18500
 
 
 Related Work
