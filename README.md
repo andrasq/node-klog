@@ -41,7 +41,8 @@ Config:
 
 - `httpPort` - http port to listen on.  Default 4244.
 - `qrpcPort` - qrpc port to listen on.  Default 4245.
-- `logs` - list of logs to manage
+- `logs` - map of lognames and log writers to manage, each with
+  methods `write` and `fflush`
 
 #### POST /:logname/write
 
@@ -150,3 +151,4 @@ TODO
 - expose flushDelayMs instead of built-in flushIntervalMs
 - more unit tests
 - fix benchmark so it exits cleanly without `process.exit()`
+- provide server method to add loggers when already running

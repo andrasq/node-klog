@@ -272,7 +272,7 @@ return next();
                         console.log("AR: Done.");
 // force the client to exit, this causes the parent to exit too
 // TODO: worker should exit when the clients are closed
-//setTimeout(process.exit, 1000);
+setTimeout(process.exit, 1000);
             next(err);
                     })
                 })
