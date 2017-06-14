@@ -47,7 +47,7 @@ Config:
 
 Append to the named log.
 
-#### POST /:logname/sync
+#### POST /:logname/fflush
 
 Flush the pending writes to backing store.
 
@@ -65,7 +65,7 @@ Options:
 #### client.write( line )
 
 Append a line to the log.  Writing is asynchronous; use `fflush` to ensure that the
-line has been recorded to the journal or `sync` that is has been recorded on the server.
+line has been recorded on the server.
 
 #### client.fflush( cb )
 
@@ -135,7 +135,4 @@ Related Work
 TODO
 ----------------
 
-- rely on just write and fflush, deprecase sync (local journal is implementation detail; fflush to remote)
-- update readme for the above
-- add journaling to the client side
 - SIGTERM handler to shut down cleanly: close inbound sockets, wait for current writes to complete
