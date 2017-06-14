@@ -152,3 +152,4 @@ TODO
 - more unit tests
 - fix benchmark so it exits cleanly without `process.exit()`
 - provide server method to add loggers when already running
+- improve fault tolerance (allow remote end to die if have a journal)

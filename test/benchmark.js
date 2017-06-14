@@ -3,7 +3,12 @@ if (process.argv[1].slice(-4) === 'qnit') return;
 var aflow = require('aflow');
 
 var fs = require('fs');
-var request = require('request');
+try {
+    var request = require('request');
+} catch (err) {
+    console.log("request not installed, using qhttp instead");
+    var request = require('qhttp');
+}
 var http = require('http');
 var httpAgent = new http.Agent({ keepAlive: true, maxSockets: 10 });
 var Url = require('url');

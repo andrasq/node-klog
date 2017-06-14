@@ -32,6 +32,8 @@
   },
   "devDependencies": {
     "qhttp": "0.6.0",
-    "qnit": "0.16.2"
+    "qnit": "0.16.2",
+    "qprintf": "0.9.2",
+    "qtimeit": "0.20.0"
   }
 }
