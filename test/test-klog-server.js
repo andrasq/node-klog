@@ -105,14 +105,6 @@ module.exports = {
                 })
             },
 
-            'should newline terminate loglines': function(t) {
-                var self = this;
-                qhttp.post("http://localhost:4244/testlog/write", "logline", function(err, res, body) {
-                    t.equal(self.testlog[0], 'logline\n');
-                    t.done();
-                })
-            },
-
             'should skip empty lines': function(t) {
                 var self = this;
                 qhttp.post("http://localhost:4244/nosuchlog/write", "", function(err, res, body) {

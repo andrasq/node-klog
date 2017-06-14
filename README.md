@@ -5,6 +5,9 @@ Kinvey Hackathon, 2017-06-12 - [Andras](https://npmjs.com/~andrasq).
 
 Fast, robust remote logging service.
 
+Transports any newline delimited data; ensures that chunks are appended atomically
+split only on newline boundaries.
+
 
 Summary
 ----------------
@@ -24,7 +27,7 @@ writer for spooling logs to a local journal then sending them to a remote log se
     var klogClient = klog.createClient(logname, {
         qrpcPort: 4245,
         host: 'localhost',
-        journal: "testlog.jour",
+        journal: "testlog.jrn",
     });
 
     log = qlogger(loglevel, klogClient);
