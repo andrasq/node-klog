@@ -162,3 +162,4 @@ TODO
 
 - SIGTERM handler to shut down cleanly: close inbound sockets, wait for current writes to complete
 - expose flushDelayMs instead of built-in flushIntervalMs
+- re-time on an AWS VM
