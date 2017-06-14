@@ -66,7 +66,7 @@ if (cluster.isMaster) {
 //            },
 
             // mutexed log writer
-            'testlog': testlogQfputs,
+//            'testlog': testlogQfputs,
         },
     };
 
