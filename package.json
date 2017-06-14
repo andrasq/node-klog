@@ -1,6 +1,6 @@
 {
   "name": "klog",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "fast remote logging service",
   "main": "index.js",
   "readmeFilename": "README.md",
@@ -27,6 +27,7 @@
     "aflow": "0.10.0",
     "qgetopt": "1.0.1",
     "mongoid-js": "1.1.0",
+    "qbuffer": "1.4.0",
     "qfputs": "1.7.0",
     "qlogger": "1.3.13",
     "qrpc": "1.1.6",

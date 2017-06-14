@@ -12,7 +12,7 @@ Summary
 Klog spools and transports newline terminated content to a remote location, useful for
 logs.  Logs can be uploaded a line at a time or from the logfile, via the API or scripted
 with `curl -d @logfile`.  Log lines are written to file under a mutex, so multiple
-simultaneous writes will not collide.
+simultaneous writers are handled correctly.
 
 For easy integration with app-side logging, a klog client is usable as the qlogger
 writer for spooling logs to a local journal then sending them to a remote log server:
@@ -161,3 +161,4 @@ TODO
 ----------------
 
 - SIGTERM handler to shut down cleanly: close inbound sockets, wait for current writes to complete
+- expose flushDelayMs instead of built-in flushIntervalMs
