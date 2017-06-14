@@ -90,25 +90,18 @@ log server:
     name                        speed           rate
     express w request 1         7,402 ops/sec    370 >>
     express w request 2         7,674 ops/sec    384 >>
-    express w request 3         7,696 ops/sec    385 >>
     restiq w request 1          7,619 ops/sec    381 >>
     restiq w request 2          7,729 ops/sec    386 >>
-    restiq w request 3          7,681 ops/sec    384 >>
     express w qhttp 1          17,279 ops/sec    864 >>>>
     express w qhttp 2          17,194 ops/sec    860 >>>>
-    express w qhttp 3          17,174 ops/sec    859 >>>>
     restiq w qhttp 1           20,390 ops/sec   1020 >>>>>
     restiq w qhttp 2           20,261 ops/sec   1013 >>>>>
-    restiq w qhttp 3           20,058 ops/sec   1003 >>>>>
     qrpc w qrpc 1             177,453 ops/sec   8873 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     qrpc w qrpc 2             180,299 ops/sec   9015 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w qrpc 3             187,126 ops/sec   9356 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     qrpc w klogClient 1       181,743 ops/sec   9087 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     qrpc w klogClient 2       187,490 ops/sec   9375 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w klogClient 3       188,680 ops/sec   9434 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     qrpc w qrpc 1k 1          202,832 ops/sec  10142 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     qrpc w qrpc 1k 2          203,937 ops/sec  10197 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w qrpc 1k 3          204,159 ops/sec  10208 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     journaled klogClient      480,000 ops/sec  24000
 
@@ -123,25 +116,18 @@ Realtime transport with checkpoint.
     name                        speed           rate
     express w request 1         6,770 ops/sec    339 >>
     express w request 2         6,814 ops/sec    341 >>
-    express w request 3         6,808 ops/sec    340 >>
     restiq w request 1          6,841 ops/sec    342 >>
     restiq w request 2          6,713 ops/sec    336 >>
-    restiq w request 3          6,677 ops/sec    334 >>
     express w qhttp 1          12,480 ops/sec    624 >>>
     express w qhttp 2          12,552 ops/sec    628 >>>
-    express w qhttp 3          12,465 ops/sec    623 >>>
     restiq w qhttp 1           13,220 ops/sec    661 >>>
     restiq w qhttp 2           14,065 ops/sec    703 >>>>
-    restiq w qhttp 3           14,141 ops/sec    707 >>>>
     qrpc w qrpc 1              29,995 ops/sec   1500 >>>>>>>>
     qrpc w qrpc 2              31,213 ops/sec   1561 >>>>>>>>
-    qrpc w qrpc 3              31,358 ops/sec   1568 >>>>>>>>
     qrpc w klogClient 1        28,956 ops/sec   1448 >>>>>>>
     qrpc w klogClient 2        31,309 ops/sec   1565 >>>>>>>>
-    qrpc w klogClient 3        31,431 ops/sec   1572 >>>>>>>>
     qrpc w klogClient 1k 1    116,748 ops/sec   5837 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     qrpc w klogClient 1k 2    137,948 ops/sec   6897 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    qrpc w klogClient 1k 3    113,342 ops/sec   5667 >>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     journaled klogClient      370,000 ops/sec  18500
 
@@ -162,4 +148,5 @@ TODO
 
 - SIGTERM handler to shut down cleanly: close inbound sockets, wait for current writes to complete
 - expose flushDelayMs instead of built-in flushIntervalMs
-- re-time on an AWS VM
+- more unit tests
+- fix benchmark so it exits cleanly without `process.exit()`

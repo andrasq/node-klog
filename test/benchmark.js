@@ -74,14 +74,14 @@ if (cluster.isMaster) {
         // server listening
         // add a hook so the tests can close the server
         if (server.qrpcServer) server.qrpcServer.addHandler('quit', function(req, res, next) {
-console.log("AR: quit server (qrpc), linesReceived=%d", linesReceived);
+console.log("AR: quit server (qrpc), %d lines received", linesReceived);
             server.close(next);
         })
         if (server.qrpcServer) server.qrpcServer.addHandler('linesReceived', function(req, res, next) {
             next(null, linesReceived);
         })
         if (server.httpServer) server.httpServer.addRoute('/quit', function(req, res, next) {
-console.log("AR: quit server (http)");
+console.log("AR: quit server (http), %d lines received", linesReceived);
             server.close(function(err) {
                 next(err, linesReceived);
             });
@@ -138,10 +138,10 @@ if (cluster.isWorker) {
     },
 
     function(next) {
-//        return next();
+return next();
 
         console.log("");
-        qtimeit.bench.timeGoal = 10;
+        qtimeit.bench.timeGoal = 1;
         qtimeit.bench.opsPerTest = 100;
         qtimeit.bench.baselineAvg = 20000;
 
@@ -149,49 +149,39 @@ if (cluster.isWorker) {
 
         'express w request 1': function(done) { log_100_w_express_request(done) },
         'express w request 2': function(done) { log_100_w_express_request(done) },
-        'express w request 3': function(done) { log_100_w_express_request(done) },
         // 7.6k/s relayed, 7.2 k/s written and flushed
 
-        'restiq w request 1': function(done) { log_100_w_restiq_request(done) },
-        'restiq w request 2': function(done) { log_100_w_restiq_request(done) },
-        'restiq w request 3': function(done) { log_100_w_restiq_request(done) },
+        // 'restiq w request 1': function(done) { log_100_w_restiq_request(done) },
         // 7.8 k/s
 
         'express w qhttp 1': function(done) { log_100_w_express_qhttp(done) },
         'express w qhttp 2': function(done) { log_100_w_express_qhttp(done) },
-        'express w qhttp 3': function(done) { log_100_w_express_qhttp(done) },
         // 17k/s relayed, 12.8 k/s written
 
         'restiq w qhttp 1': function(done) { log_100_w_restiq_qhttp(done) },
         'restiq w qhttp 2': function(done) { log_100_w_restiq_qhttp(done) },
-        'restiq w qhttp 3': function(done) { log_100_w_restiq_qhttp(done) },
         // 20k/s relayed, 14.8 k/s written
 
-        'qrpc w qrpc 1': function(done) { log_100_w_qrpc_qrpc(client, done) },
-        'qrpc w qrpc 2': function(done) { log_100_w_qrpc_qrpc(client, done) },
-        'qrpc w qrpc 3': function(done) { log_100_w_qrpc_qrpc(client, done) },
+        // 'qrpc w qrpc 1': function(done) { log_100_w_qrpc_qrpc(client, done) },
         // 182k/s relayed, 31k/s written
 
         'qrpc w klogClient 1': function(done) { log_100_w_qrpc_klogClient(klogClient, done) },
         'qrpc w klogClient 2': function(done) { log_100_w_qrpc_klogClient(klogClient, done) },
-        'qrpc w klogClient 3': function(done) { log_100_w_qrpc_klogClient(klogClient, done) },
         // 183k/s relayed, 31 k/s written
 
         'qrpc w klogClient 1k 1': function(done) { log_1000_w_qrpc_klogClient(klogClient, done) },
         'qrpc w klogClient 1k 2': function(done) { log_1000_w_qrpc_klogClient(klogClient, done) },
-        'qrpc w klogClient 1k 3': function(done) { log_1000_w_qrpc_klogClient(klogClient, done) },
         // 192k/s relayed, 142k/s written
 
         'qrpc w klogClient 10k 1': function(done) { log_10k_w_qrpc_klogClient(klogClient, done) },
         'qrpc w klogClient 10k 2': function(done) { log_10k_w_qrpc_klogClient(klogClient, done) },
-        'qrpc w klogClient 10k 3': function(done) { log_10k_w_qrpc_klogClient(klogClient, done) },
         // 192k/s relayed, 194k/s written (250k/s 100k ea)
 
         }, next);
     },
 
     function(next) {
-        return next();
+return next();
 
         console.log("");
         qtimeit.bench.timeGoal = 0.40;
@@ -242,10 +232,7 @@ if (cluster.isWorker) {
             if (err) return next(err);
             klogClient.fflush(function(err) {
                 console.timeEnd('2m lines');
-                klogClient.call('linesReceived', function(err, linesReceived) {
-                    console.log("AR: sent / received", z_id, linesReceived);
-                    next(err);
-                })
+                next(err);
             })
         })
         // 490 k/s sent to klog server (460k/s for 4m lines)
@@ -253,7 +240,7 @@ if (cluster.isWorker) {
     },
 
     function(next) {
-        return next();
+return next();
 
         console.log("");
         qtimeit.bench.timeGoal = 0.60;
@@ -273,54 +260,20 @@ if (cluster.isWorker) {
     },
 
     function(next) {
-        linesSent = z_id;
-// FIXME: some lines not flushed to log ??
-client.call('linesReceived', function(err, linesReceived) {
-            console.log("AR: lines sent, received", linesSent, linesReceived);
-            next();
-        })
-    },
-
-    function(next) {
-        client.call('linesReceived', function(err, linesReceived) {
-            console.log("AR: before final flush, lines sent %d, lines logged %d", linesSent, linesReceived, err);
-            console.time('fflush');
-            klogClient.fflush(function(err) {
-                console.timeEnd('fflush');
-                client.call('linesReceived', function(err, linesReceived) {
-                    console.log("AR: after final flush, lines sent %d, lines logged %d", linesSent, linesReceived, err);
-                    next(err);
-                })
-            })
-        })
-    },
-
-    function(next) {
-        client.call('linesReceived', function(err, linesReceived) {
-            console.log("AR: before post-final flush, lines sent", err, linesSent, linesReceived);
-            console.time('fflush');
-            klogClient.fflush(function(err) {
-                console.timeEnd('fflush');
-                client.call('linesReceived', function(err, linesReceived) {
-                    console.log("AR: after post-final flush, lines sent", err, linesSent, linesReceived);
-                    next(err);
-                })
-            })
-        })
-    },
-
-    function(next) {
-
-        client.call('testlog_fflush', function(err) {
-            klogClient.fflush(function(err) {
+        console.log("AR: before final fflush, %d lines sent", linesSent);
+        console.time('fflush');
+        klogClient.fflush(function(err) {
+            console.timeEnd('fflush');
+            client.call('testlog_fflush', function(err) {
                 klogClient.call('quit', function(err, linesReceived) {
                     console.log("AR: total lines sent", err, linesReceived);
-                    client.close(function(){
-                        klogClient.close();
+                    klogClient.close(function(){
+                        client.close();
                         console.log("AR: Done.");
 // force the client to exit, this causes the parent to exit too
 // TODO: worker should exit when the clients are closed
-setTimeout(process.exit, 1000);
+//setTimeout(process.exit, 1000);
+            next(err);
                     })
                 })
             })

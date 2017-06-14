@@ -25,8 +25,6 @@
   "keywords": [ "log", "remote", "logging", "service" ],
   "dependencies": {
     "aflow": "0.10.0",
-    "qgetopt": "1.0.1",
-    "mongoid-js": "1.1.0",
     "qbuffer": "1.4.0",
     "qfputs": "1.7.0",
     "qlogger": "1.3.13",
