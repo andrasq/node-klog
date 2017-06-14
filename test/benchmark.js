@@ -19,14 +19,24 @@ var x190 = "x".repeat(190);
 var loglines = new Array();
 for (var i=0; i<10000; i++) loglines.push(qprintf.sprintf("%s%09d\n", x190, i));
 
+var z190 = "z".repeat(190);
+var z_id = 0;
+function makeLogline( ) {
+    var line = qprintf.sprintf("%s%09d\n", z190, ++z_id);
+    return line;
+}
+
 //var cluster = { isMaster: true, isWorker: true };
 var cluster = require('cluster');
 if (cluster.isMaster) {
     if (!cluster.isWorker) cluster.fork();
 
-    var testlog = fs.createWriteStream("testlog.log", {highWaterMark: 409600, flags: "a"});
+    var testlogStream = fs.createWriteStream("testlog.log", {highWaterMark: 409600, flags: "a"});
+    var testlogQfputs = new Fputs(new Fputs.FileWriter("testlog.log", "a"));
 
-    var server = klog.createServer({
+    var linesReceived = 0;
+
+    var serverConfig = {
         httpPort: 4244,
         qrpcPort: 4245,
         expressPort: 4246,
@@ -34,29 +44,47 @@ if (cluster.isMaster) {
         logs: {
             // deliver-only (no write) log
             'testlog': {
-                write: function(){},
-                fflush: function(cb) { cb() },
+                write: function(str){
+                    if (str instanceof Buffer) {
+                        for (var i=0; i<str.length; i++) if (str[i] === 10) linesReceived += 1;
+                    }
+                    else {
+                        for (var i=0; i<str.length; i++) if (str.charCodeAt(i) === 10) linesReceived += 1;
+                    }
+                },
+                fflush: function(cb) {
+                    cb();
+                },
             },
 
             // streaming log writer, not mutexed
-            //'testlog': {
-            //    write: function(str) { testlog.write(str) },
-            //    fflush: function(cb) { testlog.write("", cb) },
-            //},
+//            'testlog': {
+//                write: function(str) {
+//console.log("AR: append to testlog %d B", str.length);
+//testlogStream.write(str) },
+//                fflush: function(cb) { testlogStream.write("", cb) },
+//            },
 
             // mutexed log writer
-            //'testlog': new Fputs(new Fputs.FileWriter("testlog.log", "a")),
+            'testlog': testlogQfputs,
         },
-    }, function(err, svr) {
+    };
+
+    klog.createServer(serverConfig, function(err, server) {
         // server listening
         // add a hook so the tests can close the server
         if (server.qrpcServer) server.qrpcServer.addHandler('quit', function(req, res, next) {
-console.log("AR: quit server (qrpc)");
+console.log("AR: quit server (qrpc), linesReceived=%d", linesReceived);
             server.close(next);
+        })
+        if (server.qrpcServer) server.qrpcServer.addHandler('linesReceived', function(req, res, next) {
+            next(null, linesReceived);
         })
         if (server.httpServer) server.httpServer.addRoute('/quit', function(req, res, next) {
 console.log("AR: quit server (http)");
-            server.close(next);
+            server.close(function(err) {
+                next(err, linesReceived);
+            });
         })
     });
 }
@@ -64,9 +92,12 @@ console.log("AR: quit server (http)");
 if (cluster.isWorker) {
     var client, klogClient;
 
-    qtimeit.bench.showRunDetails = false;
+    var linesSent = 0;
+
     qtimeit.bench.visualize = true;
     qtimeit.bench.showTestInfo = true;
+    qtimeit.bench.showRunDetails = false;
+
     aflow.series([
 
     function(next) {
@@ -107,10 +138,10 @@ if (cluster.isWorker) {
     },
 
     function(next) {
-        return next();
+//        return next();
 
         console.log("");
-        qtimeit.bench.timeGoal = 0.40;
+        qtimeit.bench.timeGoal = 10;
         qtimeit.bench.opsPerTest = 100;
         qtimeit.bench.baselineAvg = 20000;
 
@@ -198,34 +229,99 @@ if (cluster.isWorker) {
     },
 
     function(next) {
+//        return next();
+
         console.log("");
-        qtimeit.bench.timeGoal = 0.40;
+        console.log("2m log lines");
+        z_id = 0;
+        console.time('2m lines');
+        aflow.repeatUntil(function(done) {
+            klogClient.write(makeLogline());
+            done(null, z_id >= 2e6);
+        }, function(err) {
+            if (err) return next(err);
+            klogClient.fflush(function(err) {
+                console.timeEnd('2m lines');
+                klogClient.call('linesReceived', function(err, linesReceived) {
+                    console.log("AR: sent / received", z_id, linesReceived);
+                    next(err);
+                })
+            })
+        })
+        // 490 k/s sent to klog server (460k/s for 4m lines)
+        // 414 k/s lines synced to klog server target logfile (320k/s for 4m lines)
+    },
+
+    function(next) {
+        return next();
+
+        console.log("");
+        qtimeit.bench.timeGoal = 0.60;
         qtimeit.bench.opsPerTest = 100;
+        qtimeit.bench.showRunDetails = true;
+
         qtimeit.bench({
 
-        'restiq w qhttp 1': function(done) { log_100_w_restiq_qhttp(done) },
-        'restiq w qhttp 2': function(done) { log_100_w_restiq_qhttp(done) },
-        'restiq w qhttp 3': function(done) { log_100_w_restiq_qhttp(done) },
-        //
-
-        'qrpc w klogClient 1': function(done) { log_100_w_qrpc_klogClient(klogClient, done) },
-        'qrpc w klogClient 2': function(done) { log_100_w_qrpc_klogClient(klogClient, done) },
-        'qrpc w klogClient 3': function(done) { log_100_w_qrpc_klogClient(klogClient, done) },
+        'qrpc w klogClient journaled 1': function(done) { log_100_w_qrpc_klogClient_pump(klogClient, done) },
+        'qrpc w klogClient journaled 2': function(done) { log_100_w_qrpc_klogClient_pump(klogClient, done) },
+        'qrpc w klogClient journaled 3': function(done) { log_100_w_qrpc_klogClient_pump(klogClient, done) },
         //
 
         }, next)
+        // 480 k/s lines sent to klog server
+        // 370 k/s lines synced to klog server target logfile
+    },
+
+    function(next) {
+        linesSent = z_id;
+// FIXME: some lines not flushed to log ??
+client.call('linesReceived', function(err, linesReceived) {
+            console.log("AR: lines sent, received", linesSent, linesReceived);
+            next();
+        })
+    },
+
+    function(next) {
+        client.call('linesReceived', function(err, linesReceived) {
+            console.log("AR: before final flush, lines sent %d, lines logged %d", linesSent, linesReceived, err);
+            console.time('fflush');
+            klogClient.fflush(function(err) {
+                console.timeEnd('fflush');
+                client.call('linesReceived', function(err, linesReceived) {
+                    console.log("AR: after final flush, lines sent %d, lines logged %d", linesSent, linesReceived, err);
+                    next(err);
+                })
+            })
+        })
+    },
+
+    function(next) {
+        client.call('linesReceived', function(err, linesReceived) {
+            console.log("AR: before post-final flush, lines sent", err, linesSent, linesReceived);
+            console.time('fflush');
+            klogClient.fflush(function(err) {
+                console.timeEnd('fflush');
+                client.call('linesReceived', function(err, linesReceived) {
+                    console.log("AR: after post-final flush, lines sent", err, linesSent, linesReceived);
+                    next(err);
+                })
+            })
+        })
     },
 
     function(next) {
 
         client.call('testlog_fflush', function(err) {
-            client.call('quit', function(err, ret) {
-                client.close(function(){
-                    klogClient.close();
-                    console.log("AR: Done.");
+            klogClient.fflush(function(err) {
+                klogClient.call('quit', function(err, linesReceived) {
+                    console.log("AR: total lines sent", err, linesReceived);
+                    client.close(function(){
+                        klogClient.close();
+                        console.log("AR: Done.");
 // force the client to exit, this causes the parent to exit too
 // TODO: worker should exit when the clients are closed
-process.exit();
+setTimeout(process.exit, 1000);
+                    })
                 })
             })
         })
@@ -382,9 +478,9 @@ function log_100k_w_qrpc_klogClient( klogClient, done ) {
     else done();
 }
 
-function log_100k_w_qrpc_klogClient_pump( klogClient, done ) {
-    for (var i=0; i<1000; i++) {
-        klogClient.write(loglines[i]);
+function log_100_w_qrpc_klogClient_pump( klogClient, done ) {
+    for (var i=0; i<100; i++) {
+        klogClient.write(makeLogline());
     }
-    done();
+    setImmediate(done);
 }
