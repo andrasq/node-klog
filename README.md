@@ -54,10 +54,10 @@ Create a server to listen for and accept uploaded logs.
 
 Config:
 
-- `httpPort` - http port to listen on.  Default 4244.
-- `qrpcPort` - qrpc port to listen on.  Default 4245.
-- `logs` - map of lognames and log writers to manage, each with
-  methods `write` and `fflush`
+- `httpPort` - http port to listen on, default 4244
+- `qrpcPort` - qrpc port to listen on, default 4245
+- `logs` - map of lognames and log writers to manage.  Each log writer
+  must have methods `write` and `fflush`.
 
 #### POST /:logname/write
 
@@ -75,8 +75,9 @@ to the remote logging server.
 
 Options:
 
-- `url` - address of klog server to send to
-- `journal` - name of local file into which to persist log lines
+- `port` - qrpc port to connect to, default 4245
+- `host` - hostname to connect to, default 'localhost'
+- `journal` - name of local file into which to checkpoint log lines
 
 #### client.write( line )
 

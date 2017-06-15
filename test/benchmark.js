@@ -119,14 +119,14 @@ if (cluster.isWorker) {
 **/
 
     function(next) {
-        klogClient = klog.createClient('testlog', { qrpcPort: 4245, host: 'localhost' }, function(c) {
+        klogClient = klog.createClient('testlog', { port: 4245, host: 'localhost' }, function(c) {
             next();
         });
     },
 
     function(next) {
         journaledClient = klog.createClient('testlog', {
-            qrpcPort: 4245,
+            port: 4245,
             host: 'localhost',
             journal: 'testlog.jrn',
         }, next);
@@ -232,7 +232,7 @@ return next();
     function(next) {
         klogClient.close();
         klogClient = klog.createClient('testlog', {
-            qrpcPort: 4245,
+            port: 4245,
             host: 'localhost',
             journal: 'testlog.jour',
         }, next);
