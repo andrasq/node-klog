@@ -157,7 +157,7 @@ if (cluster.isWorker) {
     },
 
     function(next) {
-return next();
+//return next();
 
         console.log("");
         qtimeit.bench.timeGoal = 1;
@@ -248,7 +248,7 @@ return next();
         console.time('2m lines f2');
         aflow.repeatUntil(function(done) {
             journaledClient.write(makeLogline());
-            done(null, z_id >= 1e6);
+            done(null, z_id >= 2e6);
         },
         function(err) {
             if (err) return next(err);
