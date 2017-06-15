@@ -36,8 +36,11 @@ var cluster = require('cluster');
 if (cluster.isMaster) {
     if (!cluster.isWorker) cluster.fork();
 
-    var testlogStream = fs.createWriteStream("testlog.log", {highWaterMark: 409600, flags: "a"});
-    var testlogQfputs = new Fputs(new Fputs.FileWriter("testlog.log", "a"));
+    cluster.disconnect();
+
+    var outputFile = "testlog.log";
+    var testlogStream = fs.createWriteStream(outputFile, {highWaterMark: 409600, flags: "a"});
+    var testlogQfputs = new Fputs(new Fputs.FileWriter(outputFile));
 
     var linesReceived = 0;
 
@@ -95,27 +98,38 @@ console.log("AR: quit server (http), %d lines received", linesReceived);
 }
 
 if (cluster.isWorker) {
-    var client, klogClient;
+    var client, klogClient, journaledClient;
 
     var linesSent = 0;
 
     qtimeit.bench.visualize = true;
     qtimeit.bench.showTestInfo = true;
     qtimeit.bench.showRunDetails = false;
+    qtimeit.bench.bargraphScale = 2.5;
 
     aflow.series([
 
+/**
     function(next) {
         client = qrpc.connect(4245, 'localhost', function(socket) {
             socket.setNoDelay(true);
             next();
         })
     },
+**/
 
     function(next) {
         klogClient = klog.createClient('testlog', { qrpcPort: 4245, host: 'localhost' }, function(c) {
             next();
         });
+    },
+
+    function(next) {
+        journaledClient = klog.createClient('testlog', {
+            qrpcPort: 4245,
+            host: 'localhost',
+            journal: 'testlog.jrn',
+        }, next);
     },
 
     function(next) {
@@ -148,7 +162,7 @@ return next();
         console.log("");
         qtimeit.bench.timeGoal = 1;
         qtimeit.bench.opsPerTest = 100;
-        qtimeit.bench.baselineAvg = 20000;
+        //qtimeit.bench.baselineAvg = 20000;
 
         qtimeit.bench({
 
@@ -216,6 +230,7 @@ return next();
     },
 
     function(next) {
+        klogClient.close();
         klogClient = klog.createClient('testlog', {
             qrpcPort: 4245,
             host: 'localhost',
@@ -224,44 +239,71 @@ return next();
     },
 
     function(next) {
-//        return next();
+//return next();
 
         console.log("");
         console.log("2m log lines");
         z_id = 0;
         console.time('2m lines');
+        console.time('2m lines f2');
         aflow.repeatUntil(function(done) {
-            klogClient.write(makeLogline());
-            done(null, z_id >= 2e6);
-        }, function(err) {
+            journaledClient.write(makeLogline());
+            done(null, z_id >= 1e6);
+        },
+        function(err) {
             if (err) return next(err);
-            klogClient.fflush(function(err) {
+            journaledClient.fflush(function(err) {
+                if (err) return next(err);
                 console.timeEnd('2m lines');
-                next(err);
+                journaledClient.fflush(function(err) {
+                    console.timeEnd('2m lines f2');
+                    next(err);
+                })
             })
         })
         // 490 k/s sent to klog server (460k/s for 4m lines)
         // 414 k/s lines synced to klog server target logfile (320k/s for 4m lines)
+        // 530 k/s synced if only 1m lines
     },
 
     function(next) {
 return next();
 
+        var nloops = 1000;
         console.log("");
         qtimeit.bench.timeGoal = 0.60;
-        qtimeit.bench.opsPerTest = 100;
+        qtimeit.bench.opsPerTest = nloops;
         qtimeit.bench.showRunDetails = true;
 
         qtimeit.bench({
 
-        'qrpc w klogClient journaled 1': function(done) { log_100_w_qrpc_klogClient_pump(klogClient, done) },
-        'qrpc w klogClient journaled 2': function(done) { log_100_w_qrpc_klogClient_pump(klogClient, done) },
-        'qrpc w klogClient journaled 3': function(done) { log_100_w_qrpc_klogClient_pump(klogClient, done) },
-        //
+        'qrpc w journaledClient journaled 1': function(done) { log_N_w_qrpc_klogClient(journaledClient, nloops, 1, done) },
+        'qrpc w journaledClient journaled 2': function(done) { log_N_w_qrpc_klogClient(journaledClient, nloops, 1, done) },
+        'qrpc w journaledClient journaled 3': function(done) { log_N_w_qrpc_klogClient(journaledClient, nloops, 1, done) },
 
-        }, next)
+        }, function(err) {
+            next(err);
+        })
+        // pump, no sync:
         // 480 k/s lines sent to klog server
         // 370 k/s lines synced to klog server target logfile
+        // pump, sync every 1000:
+        // 217k/s synced to file (1k), 244k/s (100), 200k/s (10k)
+    },
+
+    function(next) {
+        if (!client) return next();
+        client.fflush(function() {
+            client.close(next);
+        })
+    },
+
+    function(next) {
+        console.time("journal fflush");
+        journaledClient.fflush(function(err) {
+            console.timeEnd("journal fflush");
+            journaledClient.close(next);
+        })
     },
 
     function(next) {
@@ -269,25 +311,24 @@ return next();
         console.time('fflush');
         klogClient.fflush(function(err) {
             console.timeEnd('fflush');
-            client.call('testlog_fflush', function(err) {
-                klogClient.call('quit', function(err, linesReceived) {
-                    console.log("AR: total lines sent", err, linesReceived);
-                    klogClient.close(function(){
-                        client.close();
-                        console.log("AR: Done.");
-// force the client to exit, this causes the parent to exit too
-// TODO: worker should exit when the clients are closed
-setTimeout(process.exit, 1000);
             next(err);
-                    })
-                })
+        })
+    },
+
+    function(next) {
+        // use klogClient to also shut down the server
+        // all network listeners must be closed for node to exit cleanly
+        klogClient.call('quit', function(err, linesReceived) {
+            console.log("AR: total lines received", err, linesReceived);
+            klogClient.close(function(){
+                next(err);
             })
         })
     },
 
     ],
     function(err) {
-// /* NOTREACHED */
+        console.log("AR: Done.");
     });
 }
 
@@ -441,4 +482,14 @@ function log_100_w_qrpc_klogClient_pump( klogClient, done ) {
         klogClient.write(makeLogline());
     }
     setImmediate(done);
+}
+
+function log_N_w_qrpc_klogClient( klogClient, n, pflush, done ) {
+    for (var i=0; i<n; i++) {
+        klogClient.write(makeLogline());
+    }
+    if (pflush < 1.0 && Math.random() <= pflush) klogClient.fflush(done);
+    else setImmediate(done);
+    // note: some lines have not landed yet (still in the fputs queue?),
+    // will have to flush again
 }
