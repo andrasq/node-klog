@@ -32,6 +32,18 @@ writer for spooling logs to a local journal then sending them to a remote log se
 
     log = qlogger(loglevel, klogClient);
 
+And on the server
+
+    var QFputs = require('qfputs');
+
+    var testlogWriter = new QFputs(new QFputs.FileWriter("testlog.log"));
+    var server = klog.createServer({
+        httpPort: 4244,
+        qrpcPort: 4245,
+        logs: {
+            'testlog': testlogWriter,
+        }
+    });
 
 API
 ----------------
