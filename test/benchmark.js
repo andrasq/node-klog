@@ -172,6 +172,10 @@ if (cluster.isWorker) {
         'express w request 2': function(done) { log_100_w_express_request(done) },
         // 7.6k/s relayed, 7.2 k/s written and flushed
 
+        'express w request chained 1': function(done) { log_100_w_express_request_chained(done) },
+        'express w request chained 2': function(done) { log_100_w_express_request_chained(done) },
+        // 4k/s
+
         // 'restiq w request 1': function(done) { log_100_w_restiq_request(done) },
         // 7.8 k/s
 
@@ -181,10 +185,19 @@ if (cluster.isWorker) {
 
         'restiq w qhttp 1': function(done) { log_100_w_restiq_qhttp(done) },
         'restiq w qhttp 2': function(done) { log_100_w_restiq_qhttp(done) },
-        // 20k/s relayed, 14.8 k/s written
+        // 20k/s relayed, 14.8 k/s written (8k/s on aws vm)
+
+        'restiq w qhttp chained 1': function(done) { log_100_w_restiq_qhttp_chained(done) },
+        'restiq w qhttp chained 2': function(done) { log_100_w_restiq_qhttp_chained(done) },
+        // 10k/s
 
         'qrpc w ack 1': function(done) { log_100_w_qrpc_ack(done) },
         'qrpc w ack 2': function(done) { log_100_w_qrpc_ack(done) },
+        // 110k/s, 30k/s written (26k/s on aws vm)
+
+        'qrpc chained 1': function(done) { log_100_w_qrpc_chained(done) },
+        'qrpc chained 2': function(done) { log_100_w_qrpc_chained(done) },
+        // 31k/s
 
         // 'qrpc w qrpc 1': function(done) { log_100_w_qrpc_qrpc(qrpcClient, done) },
         // 182k/s relayed, 31k/s written
@@ -360,6 +373,25 @@ function log_100_w_express_request( done ) {
     }
 }
 
+function log_100_w_express_request_chained( done ) {
+    var nloops = 100;
+    var ndone = 0;
+
+    aflow.repeatUntil(function(next) {
+        if (ndone >= nloops) return next(null, true);
+        var uri = {
+            url: "http://localhost:4246/testlog/write",
+            body: loglines[ndone++],
+            agent: httpAgent,
+        };
+        request.post(uri, function() { next() });
+    }, whenDone)
+
+    function whenDone() {
+        request.post("http://localhost:4246/testlog/fflush", done);
+    }
+}
+
 function log_100_w_express_qhttp( done ) {
     var nloops = 100;
     var ndone = 0;
@@ -402,6 +434,25 @@ function log_100_w_restiq_qhttp( done ) {
     }
 }
 
+function log_100_w_restiq_qhttp_chained( done ) {
+    var nloops = 100;
+    var ndone = 0;
+
+    aflow.repeatUntil(function(next) {
+        if (ndone >= 100) return next(null, true);
+        var uri = {
+            url: "http://localhost:4244/testlog/write",
+            body: loglines[ndone++],
+            agent: httpAgent,
+        };
+        qhttp.post(uri, function() { next() });
+    }, whenDone)
+
+    function whenDone() {
+        qhttp.post("http://localhost:4244/testlog/fflush", done);
+    }
+}
+
 function log_100_w_restiq_request( done ) {
     var nloops = 100;
     var ndone = 0;
@@ -434,6 +485,20 @@ function log_100_w_qrpc_ack( done ) {
     function whenDone(err, res, body) {
         ndone += 1;
         if (ndone === nloops) qrpcClient.call('testlog_fflush', done);
+    }
+}
+
+function log_100_w_qrpc_chained( done ) {
+    var nloops = 100;
+    var ndone = 0;
+
+    aflow.repeatUntil(function(next) {
+        if (ndone >= 100) return next(null, true);
+        qrpcClient.call('testlog_writeAck', loglines[ndone++], next);
+    }, whenDone)
+
+    function whenDone() {
+        qrpcClient.call('fflush', done);
     }
 }
 
