@@ -88,6 +88,10 @@ console.log("AR: quit server (qrpc), %d lines received", linesReceived);
         if (server.qrpcServer) server.qrpcServer.addHandler('linesReceived', function(req, res, next) {
             next(null, linesReceived);
         })
+        if (server.qrpcServer) server.qrpcServer.addHandler('testlog_writeAck', function(req, res, next) {
+            server.writeLog('testlog', req.m);
+            next();
+        })
         if (server.httpServer) server.httpServer.addRoute('/quit', function(req, res, next) {
 console.log("AR: quit server (http), %d lines received", linesReceived);
             server.close(function(err) {
@@ -109,14 +113,12 @@ if (cluster.isWorker) {
 
     aflow.series([
 
-/**
     function(next) {
-        client = qrpc.connect(4245, 'localhost', function(socket) {
+        qrpcClient = qrpc.connect(4245, 'localhost', function(socket) {
             socket.setNoDelay(true);
             next();
         })
     },
-**/
 
     function(next) {
         klogClient = klog.createClient('testlog', { port: 4245, host: 'localhost' }, function(c) {
@@ -181,7 +183,10 @@ if (cluster.isWorker) {
         'restiq w qhttp 2': function(done) { log_100_w_restiq_qhttp(done) },
         // 20k/s relayed, 14.8 k/s written
 
-        // 'qrpc w qrpc 1': function(done) { log_100_w_qrpc_qrpc(client, done) },
+        'qrpc w ack 1': function(done) { log_100_w_qrpc_ack(done) },
+        'qrpc w ack 2': function(done) { log_100_w_qrpc_ack(done) },
+
+        // 'qrpc w qrpc 1': function(done) { log_100_w_qrpc_qrpc(qrpcClient, done) },
         // 182k/s relayed, 31k/s written
 
         'qrpc w klogClient 1': function(done) { log_100_w_qrpc_klogClient(klogClient, done) },
@@ -207,14 +212,14 @@ return next();
         qtimeit.bench.opsPerTest = 100;
         qtimeit.bench({
 
-        'qrpc w qrpc obj 1': function(done) { log_100_w_qrpc_qrpc_obj(client, done) },
-        'qrpc w qrpc obj 2': function(done) { log_100_w_qrpc_qrpc_obj(client, done) },
-        'qrpc w qrpc obj 3': function(done) { log_100_w_qrpc_qrpc_obj(client, done) },
+        'qrpc w qrpc obj 1': function(done) { log_100_w_qrpc_qrpc_obj(qrpcClient, done) },
+        'qrpc w qrpc obj 2': function(done) { log_100_w_qrpc_qrpc_obj(qrpcClient, done) },
+        'qrpc w qrpc obj 3': function(done) { log_100_w_qrpc_qrpc_obj(qrpcClient, done) },
         // 172k/s relayed
 
-        'qrpc w qrpc 1k 1': function(done) { log_1000_w_qrpc_qrpc(client, done) },
-        'qrpc w qrpc 1k 2': function(done) { log_1000_w_qrpc_qrpc(client, done) },
-        'qrpc w qrpc 1k 3': function(done) { log_1000_w_qrpc_qrpc(client, done) },
+        'qrpc w qrpc 1k 1': function(done) { log_1000_w_qrpc_qrpc(qrpcClient, done) },
+        'qrpc w qrpc 1k 2': function(done) { log_1000_w_qrpc_qrpc(qrpcClient, done) },
+        'qrpc w qrpc 1k 3': function(done) { log_1000_w_qrpc_qrpc(qrpcClient, done) },
         // 134 k/s
 
         'qrpc w klogClient 100k 1': function(done) { log_100k_w_qrpc_klogClient(klogClient, done) },
@@ -292,9 +297,9 @@ return next();
     },
 
     function(next) {
-        if (!client) return next();
-        client.fflush(function() {
-            client.close(next);
+        if (!qrpcClient) return next();
+        qrpcClient.call('testlog_fflush', function(err) {
+            qrpcClient.close(next);
         })
     },
 
@@ -418,29 +423,43 @@ function log_100_w_restiq_request( done ) {
     }
 }
 
-function log_100_w_qrpc_qrpc( client, done ) {
-    for (var i=0; i<100; i++) {
-        client.call('testlog_write', loglines[i]);
+function log_100_w_qrpc_ack( done ) {
+    var nloops = 100;
+    var ndone = 0;
+
+    for (var i=0; i<nloops; i++) {
+        qrpcClient.call('testlog_writeAck', loglines[i], whenDone);
     }
-    client.call('testlog_fflush', function(err, ret) {
+
+    function whenDone(err, res, body) {
+        ndone += 1;
+        if (ndone === nloops) qrpcClient.call('testlog_fflush', done);
+    }
+}
+
+function log_100_w_qrpc_qrpc( qrpcClient, done ) {
+    for (var i=0; i<100; i++) {
+        qrpcClient.call('testlog_write', loglines[i]);
+    }
+    qrpcClient.call('testlog_fflush', function(err, ret) {
         done();
     })
 }
 
-function log_100_w_qrpc_qrpc_obj( client, done ) {
+function log_100_w_qrpc_qrpc_obj( qrpcClient, done ) {
     for (var i=0; i<100; i++) {
-        client.call('testlog_write', { nm: 'testlog', d: loglines[i] });
+        qrpcClient.call('testlog_write', { nm: 'testlog', d: loglines[i] });
     }
-    client.call('testlog_fflush', function(err, ret) {
+    qrpcClient.call('testlog_fflush', function(err, ret) {
         done();
     })
 }
 
-function log_1000_w_qrpc_qrpc( client, done ) {
+function log_1000_w_qrpc_qrpc( qrpcClient, done ) {
     for (var i=0; i<100; i++) {
-        client.call('testlog_write', loglines[i]);
+        qrpcClient.call('testlog_write', loglines[i]);
     }
-    if (Math.random() <= 0.10) client.call('testlog_fflush', done);
+    if (Math.random() <= 0.10) qrpcClient.call('testlog_fflush', done);
     else done();
 }
 
