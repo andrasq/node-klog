@@ -370,7 +370,6 @@ module.exports = {
 
             'should open and read the grabbed file': function(t) {
                 var self = this;
-console.log("AR: about to _sendFileContents");
                 this.client._sendFileContents('dummy.up', function(err) {
                     t.equal(self.openSpy.callCount, 1);
                     t.equal(self.openSpy.callArguments[0], 'dummy.up');
@@ -381,7 +380,6 @@ console.log("AR: about to _sendFileContents");
 
             'should return open error': function(t) {
                 var spy = t.spyOnce(this.client.fs, 'open', function(name, mode, cb) { return cb(new Error("EOPEN")) });
-// AR: FIXME: sometimes hangs here, without making the call even, 100% cpu
                 this.client._sendFileContents('dummy.up', function(err) {
                     t.ok(err);
                     t.equal(err.message, 'EOPEN');
@@ -391,7 +389,6 @@ console.log("AR: about to _sendFileContents");
 
             'should return read error': function(t) {
                 var spy = t.spyOnce(this.client.fs, 'read', function(fd, buf, offs, len, to, cb) { return cb(new Error("EREAD")) });
-// AR: FIXME: sometimes calls callback twice! from repeatUntil
                 this.client._sendFileContents('dummy.up', function(err) {
                     t.ok(err);
                     t.equal(err.message, 'EREAD');
