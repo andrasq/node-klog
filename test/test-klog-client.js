@@ -60,6 +60,18 @@ module.exports = {
             })
         },
 
+        'should initialize client.fs to fs functions': function(t) {
+            klog.createClient('testlog', function(err, client) {
+                t.deepEqual(client.fs, {
+                    open: fs.open,
+                    close: fs.close,
+                    read: fs.read,
+                    unlink: fs.unlink,
+                });
+                t.done();
+            })
+        },
+
         'callback should be optional': function(t) {
             klog.createClient('testlog', {});
             setTimeout(function(){ t.done() }, 10);
@@ -188,6 +200,7 @@ module.exports = {
                     qmock.stub(fs, 'open', function(name, mode, cb) { return cb(null, 0) });
                     qmock.stub(fs, 'unlink', function(name, cb) { return cb() });
                     qmock.stub(fs, 'read', function() { arguments[arguments.length - 1](null, 0) });
+                    qmock.stub(fs, 'close', function(fd, cb) { cb() });
                     done();
                 },
 
@@ -195,7 +208,18 @@ module.exports = {
                     fs.open.restore();
                     fs.unlink.restore();
                     fs.read.restore();
+// FIXME: if fs.close() is restored, will time out tests!  (works ok if not restored)
+                    //fs.close.restore();
                     setTimeout(done, 20);
+                },
+
+                'beforeEach': function(done) {
+                    // stub out the mockJournal fs methods
+                    this.openSpy = qmock.spy(this.client.fs, 'open', function(name, mode, cb) { return cb(null, 0) });
+                    this.unlinkSpy = qmock.spy(this.client.fs, 'unlink', function(name, cb) { return cb() });
+                    this.readSpy = qmock.spy(this.client.fs, 'read', function() { arguments[arguments.length - 1](null, 0) });
+                    this.closeSpy = qmock.spy(this.client.fs, 'close', function(fd, cb) { cb() });
+                    done();
                 },
 
                 'multiple fflush should all complete': function(t) {
