@@ -139,13 +139,14 @@ module.exports = {
                     // suppress the "could not rename" error
                     t.stub(console, 'log');
                     setTimeout(function() {
+                        console.log.restore();
                         t.equal(spy1.callCount, 1);
                         t.equal(spy1.callArguments[0], client);
                         t.equal(spy2.callCount, 1);
                         t.equal(spy3.callCount, 1);
                         t.equal(client.dirty, false);
                         t.done();
-                    }, client.flushIntervalMs + 10);
+                    }, client.flushIntervalMs + 5);
                 })
             },
 
@@ -163,8 +164,8 @@ module.exports = {
                             t.equal(stub.callCount, 1);
                             console.log.restore();
                             t.done();
-                        }, client.flushIntervalMs)
-                    }, client.flushIntervalMs)
+                        }, client.flushIntervalMs + 5)
+                    }, client.flushIntervalMs + 5)
                 })
             },
         },
@@ -186,7 +187,7 @@ module.exports = {
                 'before': function(done) {
                     qmock.stub(fs, 'open', function(name, mode, cb) { return cb(null, 0) });
                     qmock.stub(fs, 'unlink', function(name, cb) { return cb() });
-                    qmock.stub(fs, 'read', function() { arguments[arguments.length - 1](null, new Buffer("")) });
+                    qmock.stub(fs, 'read', function() { arguments[arguments.length - 1](null, 0) });
                     done();
                 },
 
@@ -194,7 +195,7 @@ module.exports = {
                     fs.open.restore();
                     fs.unlink.restore();
                     fs.read.restore();
-                    done();
+                    setTimeout(done, 20);
                 },
 
                 'multiple fflush should all complete': function(t) {
@@ -228,6 +229,7 @@ module.exports = {
                 'should return journal renameFile error': function(t) {
                     klog.createClient('testlog', {journal: this.mockJournal}, function(err, client) {
                         t.ifError(err);
+                        t.stub(client, '_sendFileContents', function(){ arguments[arguments.length - 1]() });
                         t.stubOnce(client.journal, 'renameFile', function(fm, to, cb) { cb(new Error('test renameFile error')) });
                         client.fflush(function(err) {
                             t.equal(err.message, 'test renameFile error');
@@ -297,7 +299,7 @@ module.exports = {
                     klog.createClient('testlog', {journal: this.mockJournal, journalName: 'testlog.log'}, function(err, client) {
                         var renameStub = t.spy(client.journal, 'renameFile', function(fm, to, cb) { cb() });
                         var sendStub = t.stub(client, '_sendFileContents', function(name, cb) { cb() });
-                        var unlinkStub = t.stubOnce(fs, 'unlink', function(name, cb) { cb() });
+                        var unlinkStub = t.stubOnce(client.fs, 'unlink', function(name, cb) { cb() });
                         client.fflush(function(err) {
                             t.ifError(err);
                             t.equal(renameStub.callCount, 1);
@@ -332,23 +334,19 @@ module.exports = {
 
         '_sendFileContents': {
 
-            'before': function(done) {
-                this.openSpy = qmock.spy(fs, 'open', function(name, mode, cb) { return cb(null, 0) });
-                this.readSpy = qmock.spy(fs, 'read', function() { arguments[arguments.length - 1](null, new Buffer("")) });
-                // TODO:
-                // this.openSpy = qmock.spy(this.client.fs, 'open', function(name, mode, cb) { return cb(null, 0) });
-                // this.readSpy = qmock.spy(this.client.fs, 'read', function() { arguments[arguments.length - 1](null, new Buffer("")) });
+            'beforeEach': function(done) {
+                this.openSpy = qmock.spy(this.client.fs, 'open', function(name, mode, cb) { return cb(null, 0) });
+                this.readSpy = qmock.spy(this.client.fs, 'read', function() { arguments[arguments.length - 1](null, 0) });
                 done();
             },
 
-            'after': function(done) {
-                fs.open.restore();
-                fs.read.restore();
+            'afterEach': function(done) {
                 done();
             },
 
             'should open and read the grabbed file': function(t) {
                 var self = this;
+console.log("AR: about to _sendFileContents");
                 this.client._sendFileContents('dummy.up', function(err) {
                     t.equal(self.openSpy.callCount, 1);
                     t.equal(self.openSpy.callArguments[0], 'dummy.up');
@@ -358,8 +356,8 @@ module.exports = {
             },
 
             'should return open error': function(t) {
-                var spy = t.spyOnce(fs, 'open', function(name, mode, cb) { return cb(new Error("EOPEN")) });
-// AR: FIXME: sometimes hangs here, without making the call even
+                var spy = t.spyOnce(this.client.fs, 'open', function(name, mode, cb) { return cb(new Error("EOPEN")) });
+// AR: FIXME: sometimes hangs here, without making the call even, 100% cpu
                 this.client._sendFileContents('dummy.up', function(err) {
                     t.ok(err);
                     t.equal(err.message, 'EOPEN');
@@ -368,7 +366,8 @@ module.exports = {
             },
 
             'should return read error': function(t) {
-                var spy = t.spyOnce(fs, 'read', function(fd, buf, offs, len, to, cb) { return cb(new Error("EREAD")) });
+                var spy = t.spyOnce(this.client.fs, 'read', function(fd, buf, offs, len, to, cb) { return cb(new Error("EREAD")) });
+// AR: FIXME: sometimes calls callback twice! from repeatUntil
                 this.client._sendFileContents('dummy.up', function(err) {
                     t.ok(err);
                     t.equal(err.message, 'EREAD');
@@ -379,8 +378,8 @@ module.exports = {
             'should send short file': function(t) {
                 var ncalls = 0;
                 var data = "short file contents";
-                var readStub = t.stub(fs, 'read', function(fd, buf, base, bound, from, cb) {
-                    if (ncalls++ > 0) cb(null, 0);
+                var readStub = t.stub(this.client.fs, 'read', function(fd, buf, base, bound, from, cb) {
+                    if (ncalls++ > 0) return cb(null, 0);
                     buf.write(data);
                     cb(null, data.length);
                 })
@@ -397,7 +396,7 @@ module.exports = {
                 var nbytes = 0;
                 var sent = "";
                 var data = "some more file contents\n";
-                var readStub = t.stub(fs, 'read', function(fd, buf, base, bound, from, cb) {
+                var readStub = t.stub(this.client.fs, 'read', function(fd, buf, base, bound, from, cb) {
                     if (nbytes >= 500000) return new cb(null, 0);
                     buf.write(data, base);
                     sent += data;
