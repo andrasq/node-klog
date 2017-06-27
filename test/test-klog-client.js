@@ -104,7 +104,9 @@ module.exports = {
         'afterEach': function(done) {
             if (console.log.restore) console.log.restore();     // un-stub console.log
             qmock.unmockTimers();                               // restore system timers
-            this.client.close(done);
+            this.client.close(function(){
+                done();
+            })
         },
 
         'write': {
@@ -375,26 +377,44 @@ module.exports = {
             },
 
             'should send short file': function(t) {
-                t.stubOnce(fs, 'read', function() {
-                    var cb = arguments[arguments.length - 1];
-                    cb(null, new Buffer("short file contents"))
+                var ncalls = 0;
+                var data = "short file contents";
+                var readStub = t.stub(fs, 'read', function(fd, buf, base, bound, from, cb) {
+                    if (ncalls++ > 0) cb(null, 0);
+                    buf.write(data);
+                    cb(null, data.length);
                 })
                 var writeSpy = t.spy(this.client.client, 'call');
-t.skip();
+                this.client._sendFileContents('dummy.up', function(err) {
+                    readStub.restore();
+                    t.equal(writeSpy.callCount, 1);
+                    t.deepEqual(writeSpy.callArguments, ['testlog_write', new Buffer(data)]);
+                    t.done();
+                })
             },
 
             'should send long file in chunks': function(t) {
                 var nbytes = 0;
-                t.stub(fs, 'read', function() {
-                    var cb = arguments[arguments.length - 1];
-                    if (nbytes >= 500000) return new cb(null, Buffer(""));
-                    var data = "some more file contents\n";
+                var sent = "";
+                var data = "some more file contents\n";
+                var readStub = t.stub(fs, 'read', function(fd, buf, base, bound, from, cb) {
+                    if (nbytes >= 500000) return new cb(null, 0);
+                    buf.write(data, base);
+                    sent += data;
                     nbytes += data.length;
-                    cb(null, new Buffer(data));
+                    cb(null, data.length);
                 })
                 var writeSpy = t.spy(this.client.client, 'call');
-t.skip();
                 this.client._sendFileContents('dummy.up', function(err) {
+                    readStub.restore();
+                    t.equal(writeSpy.callCount, Math.ceil(nbytes / 60000));
+                    t.equal(writeSpy.callArguments[0], 'testlog_write');
+                    var received = "";
+                    for (var i=0; i<writeSpy.callCount; i++) {
+                        received += writeSpy.getAllArguments()[i][1];
+                    }
+                    t.equal(received, sent);
+                    t.done();
                 })
             },
 
