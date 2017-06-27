@@ -10,17 +10,6 @@ var qmock = require('qnit').qmock;
 
 module.exports = {
     before: function(done) {
-        this.mockJournal = {
-            write: function(appended, callback) {
-                if (callback) callback();
-            },
-            fflush: function(callback) {
-                return callback();
-            },
-            renameFile: function(fromName, toName, callback) {
-                callback();
-            },
-        };
         this.server = klog.createServer({
             logs: {
                 testlog: {
@@ -33,6 +22,21 @@ module.exports = {
 
     after: function(done) {
         this.server.close(done);
+    },
+
+    beforeEach: function(done) {
+        this.mockJournal = {
+            write: function(appended, callback) {
+                if (callback) callback();
+            },
+            fflush: function(callback) {
+                return callback();
+            },
+            renameFile: function(fromName, toName, callback) {
+                callback();
+            },
+        };
+        done();
     },
 
     'createClient': {
@@ -288,7 +292,7 @@ module.exports = {
                 },
 
                 'should call _sendFileContents then unlink if grabbed ok': function(t) {
-                    klog.createClient('testlog', {journal: this.mockJournal}, function(err, client) {
+                    klog.createClient('testlog', {journal: this.mockJournal, journalName: 'testlog.log'}, function(err, client) {
                         var renameStub = t.spy(client.journal, 'renameFile', function(fm, to, cb) { cb() });
                         var sendStub = t.stub(client, '_sendFileContents', function(name, cb) { cb() });
                         var unlinkStub = t.stubOnce(fs, 'unlink', function(name, cb) { cb() });
@@ -296,10 +300,11 @@ module.exports = {
                             t.ifError(err);
                             t.equal(renameStub.callCount, 1);
                             t.equal(renameStub.callArguments[0], 'testlog.log');
-                            t.equal(renameStub.callArguments[1], 'undefined.up');
+                            t.equal(renameStub.callArguments[1], 'testlog.log.up');
                             t.equal(sendStub.callCount, 1);
-                            t.equal(sendStub.callArguments[0], 'undefined.up');
+                            t.equal(sendStub.callArguments[0], 'testlog.log.up');
                             t.equal(unlinkStub.callCount, 1);
+                            t.equal(unlinkStub.callArguments[0], 'testlog.log.up');
                             t.done();
                         })
                     })
@@ -351,13 +356,22 @@ module.exports = {
             },
 
             'should return open error': function(t) {
-t.skip();
-                t.done();
+                var spy = t.spyOnce(fs, 'open', function(name, mode, cb) { return cb(new Error("EOPEN")) });
+// AR: FIXME: sometimes hangs here, without making the call even
+                this.client._sendFileContents('dummy.up', function(err) {
+                    t.ok(err);
+                    t.equal(err.message, 'EOPEN');
+                    t.done();
+                })
             },
 
             'should return read error': function(t) {
-t.skip();
-                t.done();
+                var spy = t.spyOnce(fs, 'read', function(fd, buf, offs, len, to, cb) { return cb(new Error("EREAD")) });
+                this.client._sendFileContents('dummy.up', function(err) {
+                    t.ok(err);
+                    t.equal(err.message, 'EREAD');
+                    t.done();
+                })
             },
 
             'should send short file': function(t) {
