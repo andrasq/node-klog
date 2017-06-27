@@ -206,8 +206,7 @@ module.exports = {
                     fs.open.restore();
                     fs.unlink.restore();
                     fs.read.restore();
-// FIXME: if fs.close() is restored, will time out tests!  (works ok if not restored)
-                    //fs.close.restore();
+                    fs.close.restore();
                     setTimeout(done, 20);
                 },
 
@@ -358,7 +357,9 @@ module.exports = {
 
             'beforeEach': function(done) {
                 this.openSpy = qmock.spy(this.client.fs, 'open', function(name, mode, cb) { return cb(null, 0) });
+                this.unlinkSpy = qmock.spy(this.client.fs, 'unlink', function(name, cb) { return cb() });
                 this.readSpy = qmock.spy(this.client.fs, 'read', function() { arguments[arguments.length - 1](null, 0) });
+                this.closeSpy = qmock.spy(this.client.fs, 'close', function(fd, cb) { cb() });
                 done();
             },
 
