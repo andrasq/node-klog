@@ -116,9 +116,7 @@ module.exports = {
         'afterEach': function(done) {
             if (console.log.restore) console.log.restore();     // un-stub console.log
             qmock.unmockTimers();                               // restore system timers
-            this.client.close(function(){
-                done();
-            })
+            this.client.close(done);
         },
 
         'write': {
