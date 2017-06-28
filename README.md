@@ -1,5 +1,7 @@
 klog
 ================
+[![Build Status](https://api.travis-ci.org/andrasq/node-klog.svg?branch=master)](https://travis-ci.org/andrasq/node-klog?branch=master)
+[![Coverage Status](https://codecov.io/github/andrasq/node-klog/coverage.svg?branch=master)](https://codecov.io/github/andrasq/node-klog?branch=master)
 
 Kinvey Hackathon, 2017-06-12 - [Andras](https://npmjs.com/~andrasq).
 
