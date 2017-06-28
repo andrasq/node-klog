@@ -53,6 +53,11 @@ module.exports = {
         },
 
         'should create express server': function(t) {
+            try {
+                require('express');
+            } catch (err) {
+                t.skip();
+            }
             var klog = KlogServer.createServer({ expressPort: 4246 }, function(err, klog2) {
                 t.ok(klog.expressServer);
                 klog.close(function() {
