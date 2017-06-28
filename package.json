@@ -1,6 +1,6 @@
 {
   "name": "klog",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "fast remote logging service",
   "main": "index.js",
   "readmeFilename": "README.md",
