@@ -277,7 +277,9 @@ module.exports = {
                         var myCb = function(){};
                         t.stub(client, '_sendFileContents', function(name, cb) { cb() });
                         client.fflush(myCb);
-                        t.equal(client.emitter.listeners('flushDone')[0].listener, myCb);
+                        // node-v6 returns a function g with property `listener`, node-v7 and up return the callback
+                        var listener = client.emitter.listeners('flushDone')[0];
+                        t.ok((listener.listener === myCb) || (listener === myCb));
                         t.done();
                     })
                 },
@@ -299,7 +301,8 @@ module.exports = {
                         t.stub(client, '_sendFileContents', function(name, cb) { cb() });
                         client.fflush(myCb);
                         t.equal(client.emitter.listeners('flushDone').length, 1);
-                        t.equal(client.emitter.listeners('flushDone')[0].listener, myCb);
+                        var listener = client.emitter.listeners('flushDone')[0];
+                        t.ok((listener.listener === myCb) || (listener === myCb));
                         t.done();
                     })
                 },
