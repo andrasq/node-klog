@@ -4,6 +4,13 @@ var KlogServer = require('../lib/klog-server.js');
 var qhttp = require('qhttp');
 var qrpc = require('qrpc');
 
+try {
+    require('express');
+    var haveExpress = true;
+} catch (err) {
+    var haveExpress = false;
+}
+
 module.exports = {
     'klog-server': {
         'should export a constructor': function(t) {
@@ -53,11 +60,7 @@ module.exports = {
         },
 
         'should create express server': function(t) {
-            try {
-                require('express');
-            } catch (err) {
-                t.skip();
-            }
+            if (!haveExpress) t.skip();
             var klog = KlogServer.createServer({ expressPort: 4246 }, function(err, klog2) {
                 t.ok(klog.expressServer);
                 klog.close(function() {
@@ -73,7 +76,7 @@ module.exports = {
             var config = {
                 httpPort: 4244,
                 qrpcPort: 4245,
-                expressPort: 4246,
+                expressPort: haveExpress ? 4246 : null,
                 logs: {
                     testlog: {
                         write: function(str, cb) {
@@ -155,6 +158,7 @@ module.exports = {
             },
 
             'express server should call _doHttpLogWrite': function(t) {
+                if (!haveExpress) return t.done();
                 var spy = t.spyOnce(this.server, '_doHttpLogWrite');
                 qhttp.post("http://localhost:4246/testlog/write", "logline\n", function(err, res, body) {
                     t.equal(spy.callCount, 1);
@@ -163,6 +167,7 @@ module.exports = {
             },
 
             'express server should call _doHttpLogSync': function(t) {
+                if (!haveExpress) return t.done();
                 var self = this;
                 var spy = t.spyOnce(this.server, '_doHttpLogSync');
                 qhttp.post("http://localhost:4246/testlog/fflush", "logline", function(err, res, body) {
