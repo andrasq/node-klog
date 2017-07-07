@@ -20,11 +20,11 @@ var qtimeit = require('qtimeit');
 
 var klog = require('../');
 
-var x190 = "x".repeat(190);
+var x190 = new Array(190+1).join("x");
 var loglines = new Array();
 for (var i=0; i<10000; i++) loglines.push(qprintf.sprintf("%s%09d\n", x190, i));
 
-var z190 = "z".repeat(190);
+var z190 = new Array(190 + 1).join("z");
 var z_id = 0;
 function makeLogline( ) {
     var line = qprintf.sprintf("%s%09d\n", z190, ++z_id);
@@ -257,7 +257,7 @@ return next();
     },
 
     function(next) {
-//return next();
+return next();
 
         console.log("");
         console.log("2m log lines");
