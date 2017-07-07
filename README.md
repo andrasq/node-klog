@@ -95,6 +95,42 @@ Wait for all the logged lines to be persisted on the remote log server.
 Disconnect from the klog server.  Note that this does not `fflush`.
 
 
+Example
+----------------
+
+Sample server:
+
+    var Fputs = require('qfputs');
+
+    var serverConfig = {
+        qrpcPort: 8081,
+        httpPort: 8080,
+        logs: {
+            'testlog': new Fputs(new Fputs.FileWriter('remote-testlog.log')),
+        }
+    }
+    klog.createServer(serverConfig, function(err, server) {
+        // server listening
+        server.qrpcServer.addHandler('quit', function(req, res, next){ sever.close(next) });
+        server.httpServer.addRoute('/quit', function(req, res, next){ server.close(next) }); 
+    })
+
+Sample client:
+
+    var clientConfig = {
+        port: 8081,
+        host: 'localhost',
+        journal: 'local-testlog.jrn',
+    }
+    klog.createClient('testlog', clientConfig, function(err, klogClient) {
+        // client connected
+        klog.write("Hello, world.\n");
+        klog.fflush(function(err) {
+            // our Hello line has been persisted on the remote
+        })
+    })
+    
+
 Performance
 ----------------
 

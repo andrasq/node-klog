@@ -260,7 +260,7 @@ return next();
 return next();
 
         console.log("");
-        console.log("2m log lines");
+        console.log("2m journaled log lines");
         z_id = 0;
         console.time('2m lines');
         console.time('2m lines f2');
