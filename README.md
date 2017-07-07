@@ -150,6 +150,23 @@ Realtime transport with checkpoint.
 
     journaled klogClient      370,000 ops/sec  18500
 
+Calls that are launched only after the previous call completed run slower,
+but here too rpc is much faster.  Checkpointed log transport, back-to-back
+chained calls:
+
+    qtimeit=0.21.0 node=6.9.1 v8=5.1.281.84 platform=linux kernel=3.16.0-4-amd64 up_threshold=11
+    arch=ia32 mhz=4415 cpuCount=8 cpu="Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz"
+    timeGoal=4 opsPerTest=100 forkTests=false
+    name                            speed           rate
+    express w request 1             6,429 ops/sec   1000 >>>
+    express w request 2             6,735 ops/sec   1048 >>>
+    express w request chained 1     4,153 ops/sec    646 >>
+    express w request chained 2     4,129 ops/sec    642 >>
+    restiq w qhttp chained 1        8,933 ops/sec   1390 >>>
+    restiq w qhttp chained 2        8,684 ops/sec   1351 >>>
+    qrpc chained 1                 31,131 ops/sec   4842 >>>>>>>>>>>>
+    qrpc chained 2                 31,016 ops/sec   4824 >>>>>>>>>>>>
+
 
 Related Work
 ----------------
@@ -160,6 +177,7 @@ Related Work
 - [qhttp](https://npmjs.com/package/qhttp) - fast convenience wrapper around `http`
 - [qlogger](https://npmjs.com/package/qlogger) - very fast, very flexible logging
 - [qrpc](https://npmjs.com/package/qrpc) - very fast rpc
+- [qtimeit](https://npmjs.com/package/qtimeit) - accurate low-level nodejs benchmarking
 
 
 TODO
